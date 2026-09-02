@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gráfico da Função Logarítmica</title>
+<style>
+  :root {
+    --bg: #0b1120;
+    --panel: #111827;
+    --panel-2: #172033;
+    --panel-3: #0f172a;
+    --text: #f8fafc;
+    --muted: #aebbd0;
+    --muted-2: #718096;
+    --accent: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --good: #22c55e;
+    --bad: #ef4444;
+    --answer: #38bdf8;
+    --border: #2b3a52;
+    --grid: #263449;
+    --axis: #64748b;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 18px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(circle at top, rgba(139, 92, 246, .10), transparent 35%),
+      linear-gradient(180deg, var(--bg), #0f172a);
+  }
+
+  button, input, select { font: inherit; }
+
+  .app {
+    width: min(1080px, 100%);
+    margin: 0 auto;
+  }
+
+  .home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 650;
+    margin: 2px 0 18px;
+    transition: color .2s ease, transform .2s ease;
+  }
+
+  .home-link:hover {
+    color: #fff;
+    transform: translateX(-2px);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    margin: 0;
+    color: var(--accent);
+    font-size: clamp(1.75rem, 4vw, 2.55rem);
+    line-height: 1.15;
+    letter-spacing: -.025em;
+  }
+
+  .subtitle {
+    margin: 9px auto 14px;
+    max-width: 720px;
+    color: var(--muted);
+    font-size: 1.02rem;
+  }
+
+  .diff-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-weight: 650;
+  }
+
+  select,
+  input[type="number"] {
+    color: var(--text);
+    background: var(--panel-2);
+    border: 2px solid var(--border);
+    border-radius: 9px;
+    outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease;
+  }
+
+  .diff-controls select {
+    padding: 9px 13px;
+    cursor: pointer;
+  }
+
+  select:focus,
+  input[type="number"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, .14);
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .card {
+    padding: 12px 16px;
+    text-align: center;
+    background: rgba(17, 24, 39, .88);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    box-shadow: 0 8px 22px rgba(0,0,0,.18);
+  }
+
+  .label {
+    color: var(--muted-2);
+    font-size: .76rem;
+    font-weight: 750;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .value {
+    margin-top: 2px;
+    font-size: 1.5rem;
+    font-weight: 850;
+  }
+
+  .score { color: var(--accent); }
+  .good { color: var(--good); }
+  .bad { color: var(--bad); }
+
+  .game-layout {
+    display: grid;
+    grid-template-columns: 330px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  .panel-box {
+    background: rgba(17, 24, 39, .94);
+    border: 1px solid var(--border);
+    border-radius: 17px;
+    padding: 22px;
+    box-shadow: 0 14px 35px rgba(0,0,0,.24);
+  }
+
+  .equation-box {
+    width: 100%;
+    min-height: 82px;
+    margin-bottom: 22px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: rgba(2, 6, 23, .72);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+  }
+
+  .equation {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: center;
+    white-space: nowrap;
+    font-size: 2.15rem;
+    font-weight: 750;
+    line-height: 1.1;
+    transform-origin: center;
+    transition: transform .15s ease;
+  }
+
+  /* Notação matemática: índice e expoente ocupam posições reais de subscrito/sobrescrito. */
+  .equation .log-base {
+    display: inline-block;
+    margin: 0 4px 0 1px;
+    font-size: .48em;
+    line-height: 0;
+    vertical-align: sub;
+    color: var(--accent);
+    font-weight: 800;
+    position: relative;
+    top: .08em;
+  }
+
+  .equation sup {
+    font-size: .56em;
+    line-height: 0;
+    vertical-align: super;
+    position: relative;
+    top: -.03em;
+  }
+
+  .form-group { margin-bottom: 15px; }
+
+  .form-group > label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--muted);
+    font-size: .9rem;
+    font-weight: 700;
+  }
+
+  .coord-inputs {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .coord-inputs > span {
+    flex: 0 0 auto;
+    color: var(--muted);
+    font-weight: 750;
+  }
+
+  .point-group {
+    padding: 10px;
+    margin: -5px -5px 10px;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    transition: background .2s ease, border-color .2s ease;
+  }
+
+  .point-group.correct {
+    background: rgba(34, 197, 94, .10);
+    border-color: rgba(34, 197, 94, .30);
+  }
+
+  .point-group.incorrect {
+    background: rgba(239, 68, 68, .10);
+    border-color: rgba(239, 68, 68, .30);
+  }
+
+  .point-group.correct input { border-color: rgba(34, 197, 94, .65); }
+  .point-group.incorrect input { border-color: rgba(239, 68, 68, .65); }
+
+  .point-status {
+    min-height: 17px;
+    margin-top: 5px;
+    font-size: .75rem;
+    font-weight: 700;
+  }
+
+  .point-status.correct { color: var(--good); }
+  .point-status.incorrect { color: var(--bad); }
+
+  .quadratic-only { display: none; }
+  body.quadratic-mode .quadratic-only { display: block; }
+
+  .form-group.result-correct > label { color: var(--good); }
+  .form-group.result-incorrect > label { color: var(--bad); }
+
+  input[type="number"] {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 8px;
+    text-align: center;
+    font-weight: 750;
+  }
+
+  .coord-inputs input[type="number"] { width: 74px; }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] { -moz-appearance: textfield; }
+
+  .input-box {
+    width: 100%;
+    padding: 10px;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .button-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 9px;
+    margin-top: 8px;
+  }
+
+  .btn {
+    width: 100%;
+    border: 0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform .15s ease, background .18s ease, opacity .18s ease;
+  }
+
+  .btn:hover:not(:disabled) { transform: translateY(-1px); }
+  .btn:active:not(:disabled) { transform: translateY(0); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+  .btn-submit {
+    color: #fff;
+    background: var(--accent);
+  }
+
+  .btn-submit:hover:not(:disabled) { background: var(--accent-hover); }
+
+  .btn-answer {
+    color: #e0f2fe;
+    background: rgba(56, 189, 248, .12);
+    border: 1px solid rgba(56, 189, 248, .35);
+  }
+
+  .btn-answer:hover:not(:disabled) {
+    background: rgba(56, 189, 248, .19);
+  }
+
+  .canvas-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    background: #020617;
+    border: 2px solid var(--border);
+    border-radius: 13px;
+    cursor: crosshair;
+    outline: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  canvas:focus { outline: none; }
+
+  .canvas-hint {
+    width: 100%;
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: .82rem;
+    text-align: center;
+  }
+
+  .feedback {
+    width: 100%;
+    margin-top: 17px;
+    padding: 15px 16px;
+    border-radius: 10px;
+    line-height: 1.5;
+    display: none;
+  }
+
+  .feedback.show {
+    display: block;
+    animation: fadeIn .25s ease;
+  }
+
+  .feedback.success {
+    background: rgba(34,197,94,.09);
+    border: 1px solid rgba(34,197,94,.24);
+  }
+
+  .feedback.error {
+    background: rgba(239,68,68,.09);
+    border: 1px solid rgba(239,68,68,.24);
+  }
+
+  .feedback.answer {
+    background: rgba(56,189,248,.08);
+    border: 1px solid rgba(56,189,248,.26);
+  }
+
+  .feedback h3 {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+  }
+
+  .feedback.success h3 { color: var(--good); }
+  .feedback.error h3 { color: var(--bad); }
+  .feedback.answer h3 { color: var(--answer); }
+
+  .feedback ul {
+    margin: 7px 0 0 19px;
+    padding: 0;
+    color: var(--muted);
+  }
+
+  .feedback li { margin-bottom: 5px; }
+
+  .feedback strong { color: var(--text); }
+
+  .status-note {
+    margin-top: 11px;
+    color: var(--muted-2);
+    font-size: .76rem;
+    text-align: center;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 850px) {
+    .game-layout { grid-template-columns: 1fr; }
+    .panel-box { padding: 18px; }
+    .canvas-container { order: -1; }
+  }
+
+  @media (max-width: 560px) {
+    body { padding: 12px; }
+    .hud { grid-template-columns: 1fr; gap: 8px; }
+    .card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .value { margin-top: 0; }
+    .equation { font-size: 1.75rem; }
+    .diff-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+  }
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <a href="../../index.html" class="home-link">
+    <span>←</span> Voltar para Home
+  </a>
+
+  <header>
+    <h1>Gráfico da Função Logarítmica</h1>
+    <div class="subtitle">
+      Identifique pontos importantes, assíntota e comportamento da função.
+    </div>
+
+    <div class="diff-controls">
+      <label for="difficulty">Nível:</label>
+      <select id="difficulty">
+        <option value="normal">Normal — Bases Diversas</option>
+        <option value="dificil">Difícil — Função Afim Interna</option>
+        <option value="impossivel">Impossível — Função Quadrática</option>
+      </select>
+    </div>
+  </header>
+
+  <section class="hud">
+    <div class="card">
+      <div class="label">Pontuação</div>
+      <div class="value score" id="ui-score">0</div>
+    </div>
+    <div class="card">
+      <div class="label">Acertos</div>
+      <div class="value good" id="ui-hits">0</div>
+    </div>
+    <div class="card">
+      <div class="label">Erros</div>
+      <div class="value bad" id="ui-misses">0</div>
+    </div>
+  </section>
+
+  <main class="game-layout">
+
+    <section class="panel-box">
+      <div class="equation-box" id="eq-box">
+        <div class="equation" id="equation"></div>
+      </div>
+
+      <div class="form-group point-group" id="point-group-1">
+        <label for="p1x" id="p1-label">Ponto 1</label>
+        <div class="coord-inputs">
+          <span>(</span>
+          <input type="number" id="p1x" step="0.1" placeholder="x" inputmode="decimal">
+          <span>,</span>
+          <input type="number" id="p1y" step="0.1" placeholder="y" inputmode="decimal">
+          <span>)</span>
+        </div>
+        <div class="point-status" id="p1-status"></div>
+      </div>
+
+      <div class="form-group point-group" id="point-group-2">
+        <label for="p2x" id="p2-label">Ponto 2</label>
+        <div class="coord-inputs">
+          <span>(</span>
+          <input type="number" id="p2x" step="0.1" placeholder="x" inputmode="decimal">
+          <span>,</span>
+          <input type="number" id="p2y" step="0.1" placeholder="y" inputmode="decimal">
+          <span>)</span>
+        </div>
+        <div class="point-status" id="p2-status"></div>
+      </div>
+
+      <div class="form-group point-group quadratic-only" id="point-group-3">
+        <label for="p3x" id="p3-label">Ponto 3</label>
+        <div class="coord-inputs">
+          <span>(</span>
+          <input type="number" id="p3x" step="0.1" placeholder="x" inputmode="decimal">
+          <span>,</span>
+          <input type="number" id="p3y" step="0.1" placeholder="y" inputmode="decimal">
+          <span>)</span>
+        </div>
+        <div class="point-status" id="p3-status"></div>
+      </div>
+
+      <div class="form-group point-group quadratic-only" id="point-group-4">
+        <label for="p4x" id="p4-label">Ponto 4</label>
+        <div class="coord-inputs">
+          <span>(</span>
+          <input type="number" id="p4x" step="0.1" placeholder="x" inputmode="decimal">
+          <span>,</span>
+          <input type="number" id="p4y" step="0.1" placeholder="y" inputmode="decimal">
+          <span>)</span>
+        </div>
+        <div class="point-status" id="p4-status"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="behavior">Comportamento</label>
+        <select class="input-box" id="behavior">
+          <option value="">-- Selecione --</option>
+          <option value="crescente">Crescente</option>
+          <option value="decrescente">Decrescente</option>
+          <option value="cres_dec">Sobe e Desce — ∩</option>
+          <option value="dec_cres">Desce e Sobe — ∪</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="asymptote">Assíntota Vertical Principal</label>
+        <div class="coord-inputs">
+          <span>x =</span>
+          <input type="number" id="asymptote" step="0.1" placeholder="valor" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button class="btn btn-submit" id="btn-submit" type="button">
+          Verificar Gráfico
+        </button>
+
+        <button class="btn btn-answer" id="btn-answer" type="button">
+          Mostrar resposta
+        </button>
+      </div>
+
+      <div class="status-note">
+        “Mostrar resposta” registra o desafio como erro e revela a solução.
+      </div>
+    </section>
+
+    <section class="canvas-container panel-box">
+      <canvas id="graph" width="600" height="400" tabindex="0" aria-label="Plano cartesiano interativo"></canvas>
+      <div class="canvas-hint">
+        Clique no plano para posicionar os pontos. Na função quadrática, marque os quatro pontos importantes.
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   REFERÊNCIAS
+   ========================================================= */
+const canvas = document.getElementById("graph");
+const ctx = canvas.getContext("2d");
+
+const uiScore = document.getElementById("ui-score");
+const uiHits = document.getElementById("ui-hits");
+const uiMisses = document.getElementById("ui-misses");
+
+const equationEl = document.getElementById("equation");
+const eqBox = document.getElementById("eq-box");
+const diffSelect = document.getElementById("difficulty");
+
+const btnSubmit = document.getElementById("btn-submit");
+const btnAnswer = document.getElementById("btn-answer");
+const feedbackEl = document.getElementById("feedback");
+const pointGroups = [1, 2, 3, 4].map((n) => ({
+  group: document.getElementById(`point-group-${n}`),
+  label: document.getElementById(`p${n}-label`),
+  status: document.getElementById(`p${n}-status`)
+}));
+
+const inputs = {
+  p1x: document.getElementById("p1x"),
+  p1y: document.getElementById("p1y"),
+  p2x: document.getElementById("p2x"),
+  p2y: document.getElementById("p2y"),
+  p3x: document.getElementById("p3x"),
+  p3y: document.getElementById("p3y"),
+  p4x: document.getElementById("p4x"),
+  p4y: document.getElementById("p4y"),
+  behavior: document.getElementById("behavior"),
+  asymptote: document.getElementById("asymptote")
+};
+
+/* =========================================================
+   CONFIGURAÇÃO DO PLANO
+   ========================================================= */
+const originX = 300;
+const originY = 200;
+const scale = 30;
+
+const COLORS = {
+  background: "#020617",
+  grid: "#263449",
+  gridAxis: "#334155",
+  axis: "#64748b",
+  numbers: "#b8c5d8",
+  curve: "#8b5cf6",
+  asymptote: "#ef4444",
+  userPoint: "#38bdf8",
+  wrongPoint: "#ef4444",
+  correctPoint: "#22c55e",
+  white: "#ffffff"
+};
+
+/* =========================================================
+   ESTADO DO JOGO
+   ========================================================= */
+let score = 0;
+let hits = 0;
+let misses = 0;
+
+let currentBase = 2;
+let funcType = "normal";       // normal | linear | quadratic
+let currentK = 0;
+let currentSign = 1;
+
+let points = [];
+let pointResults = [];
+let gameState = "waiting";     // waiting | feedback | answer
+
+/* =========================================================
+   FORMATAÇÃO
+   ========================================================= */
+function formatNumber(value) {
+  if (!Number.isFinite(value)) return "—";
+
+  if (Math.abs(value) < 1e-10) return "0";
+
+  if (Number.isInteger(value)) return String(value);
+
+  const rounded = Math.round(value * 100) / 100;
+  return String(rounded).replace(".", ",");
+}
+
+function formatBase(base) {
+  if (base < 1) {
+    const denominator = Math.round(1 / base);
+    return `1/${denominator}`;
+  }
+  return formatNumber(base);
+}
+
+function formatSignedTerm(coef, variable = "x") {
+  if (coef === 0) return "";
+
+  const sign = coef > 0 ? "+ " : "− ";
+  const abs = Math.abs(coef);
+
+  if (abs === 1) return `${sign}${variable}`;
+  return `${sign}${formatNumber(abs)}${variable}`;
+}
+
+/* =========================================================
+   EQUAÇÃO
+   ========================================================= */
+function buildArgumentHTML() {
+  if (funcType === "normal") {
+    return "x";
+  }
+
+  if (funcType === "linear") {
+    const a = currentSign;
+
+    if (a === 1) {
+      if (currentK === 0) return "x";
+      return currentK > 0
+        ? `x + ${formatNumber(currentK)}`
+        : `x − ${formatNumber(Math.abs(currentK))}`;
+    }
+
+    if (currentK === 0) return "−x";
+
+    return currentK > 0
+      ? `−x + ${formatNumber(currentK)}`
+      : `−x − ${formatNumber(Math.abs(currentK))}`;
+  }
+
+  // (x - k)²
+  if (currentK === 0) return "x<sup>2</sup>";
+
+  const k = Math.abs(currentK);
+
+  return currentK > 0
+    ? `(x − ${formatNumber(k)})<sup>2</sup>`
+    : `(x + ${formatNumber(k)})<sup>2</sup>`;
+}
+
+function renderEquation() {
+  const base = formatBase(currentBase);
+  const argument = buildArgumentHTML();
+
+  equationEl.innerHTML =
+    `f(x) = log<sub class="log-base">${base}</sub>(${argument})`;
+
+  requestAnimationFrame(adjustEquationSize);
+}
+
+function adjustEquationSize() {
+  equationEl.style.transform = "scale(1)";
+
+  const availableWidth = Math.max(50, eqBox.clientWidth - 28);
+  const naturalWidth = equationEl.scrollWidth;
+
+  if (naturalWidth > availableWidth) {
+    const factor = Math.max(0.55, availableWidth / naturalWidth);
+    equationEl.style.transform = `scale(${factor})`;
+  }
+}
+
+/* =========================================================
+   GERAÇÃO DOS DESAFIOS
+   ========================================================= */
+function generateProblem() {
+  const diff = diffSelect.value;
+  document.body.classList.toggle("quadratic-mode", diff === "impossivel");
+  updatePointLabels();
+
+  if (diff === "normal") {
+    const bases = [2, 3, 4, 5, 10, 1 / 2, 1 / 3, 1 / 4];
+
+    currentBase = bases[Math.floor(Math.random() * bases.length)];
+    funcType = "normal";
+    currentK = 0;
+    currentSign = 1;
+
+  } else if (diff === "dificil") {
+    const bases = [2, 3, 4, 1 / 2, 1 / 3];
+
+    currentBase = bases[Math.floor(Math.random() * bases.length)];
+    funcType = "linear";
+
+    do {
+      currentK = Math.floor(Math.random() * 9) - 4;
+    } while (currentK === 0);
+
+    currentSign = Math.random() < 0.5 ? 1 : -1;
+
+  } else {
+    const bases = [4, 1 / 4];
+
+    currentBase = bases[Math.floor(Math.random() * bases.length)];
+    funcType = "quadratic";
+    currentK = Math.floor(Math.random() * 7) - 3;
+    currentSign = 1;
+  }
+
+  points = [];
+  pointResults = [];
+  gameState = "waiting";
+
+  clearInputs();
+  renderEquation();
+  resetFeedback();
+
+  btnSubmit.textContent = "Verificar Gráfico";
+  btnSubmit.disabled = false;
+  btnAnswer.disabled = false;
+
+  drawPlane();
+}
+
+function updatePointLabels() {
+  if (funcType === "quadratic") {
+    pointGroups.forEach((item, index) => {
+      item.label.textContent = `Ponto ${index + 1}`;
+    });
+  } else {
+    pointGroups[0].label.textContent = "Ponto 1 — Raiz";
+    pointGroups[1].label.textContent = "Ponto 2 — Ponto da Base";
+  }
+}
+
+function clearInputs() {
+  [1, 2, 3, 4].forEach((n) => {
+    inputs[`p${n}x`].value = "";
+    inputs[`p${n}y`].value = "";
+    pointGroups[n - 1].group.classList.remove("correct", "incorrect");
+    pointGroups[n - 1].status.className = "point-status";
+    pointGroups[n - 1].status.textContent = "";
+  });
+
+  inputs.behavior.value = "";
+  inputs.asymptote.value = "";
+  inputs.behavior.closest(".form-group")?.classList.remove("result-correct", "result-incorrect");
+  inputs.asymptote.closest(".form-group")?.classList.remove("result-correct", "result-incorrect");
+}
+
+/* =========================================================
+   MATEMÁTICA DA FUNÇÃO
+   ========================================================= */
+function evalG(x) {
+  if (funcType === "normal") {
+    return x;
+  }
+
+  if (funcType === "linear") {
+    return currentSign * x + currentK;
+  }
+
+  return Math.pow(x - currentK, 2);
+}
+
+function getAsymptotePos() {
+  if (funcType === "normal") return 0;
+
+  if (funcType === "linear") {
+    return currentSign === 1 ? -currentK : currentK;
+  }
+
+  return currentK;
+}
+
+function getExpectedAnswer() {
+  let roots = [];
+  let basePoints = [];
+  let behavior = "";
+
+  if (funcType === "normal") {
+    roots = [1];
+    basePoints = [currentBase];
+    behavior = currentBase > 1 ? "crescente" : "decrescente";
+
+  } else if (funcType === "linear") {
+    if (currentSign === 1) {
+      roots = [1 - currentK];
+      basePoints = [currentBase - currentK];
+      behavior = currentBase > 1 ? "crescente" : "decrescente";
+    } else {
+      roots = [currentK - 1];
+      basePoints = [currentK - currentBase];
+      behavior = currentBase > 1 ? "decrescente" : "crescente";
+    }
+
+  } else {
+    roots = [currentK - 1, currentK + 1];
+    basePoints = [
+      currentK - Math.sqrt(currentBase),
+      currentK + Math.sqrt(currentBase)
+    ];
+
+    behavior = currentBase > 1 ? "dec_cres" : "cres_dec";
+  }
+
+  return {
+    roots,
+    basePoints,
+    behavior,
+    asymptote: getAsymptotePos()
+  };
+}
+
+/* =========================================================
+   CONVERSÕES DO PLANO
+   ========================================================= */
+function toCanvasX(x) {
+  return originX + x * scale;
+}
+
+function toCanvasY(y) {
+  return originY - y * scale;
+}
+
+function toPlaneX(cx) {
+  return (cx - originX) / scale;
+}
+
+function toPlaneY(cy) {
+  return (originY - cy) / scale;
+}
+
+/* =========================================================
+   DESENHO DO PLANO
+   ========================================================= */
+function drawPlane() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = COLORS.background;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawGrid();
+  drawAxes();
+  drawNumbers();
+
+  if (gameState === "feedback" || gameState === "answer") {
+    drawLogCurve();
+    drawAsymptote();
+
+    if (gameState === "answer") {
+      drawCorrectPoints();
+    }
+  }
+
+  drawUserPoints();
+}
+
+function drawGrid() {
+  ctx.strokeStyle = COLORS.grid;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+
+  // Linhas verticais
+  for (let x = originX % scale; x <= canvas.width; x += scale) {
+    ctx.moveTo(Math.round(x) + 0.5, 0);
+    ctx.lineTo(Math.round(x) + 0.5, canvas.height);
+  }
+
+  // Linhas horizontais
+  for (let y = originY % scale; y <= canvas.height; y += scale) {
+    ctx.moveTo(0, Math.round(y) + 0.5);
+    ctx.lineTo(canvas.width, Math.round(y) + 0.5);
+  }
+
+  ctx.stroke();
+}
+
+function drawAxes() {
+  ctx.strokeStyle = COLORS.axis;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  ctx.moveTo(0, originY + 0.5);
+  ctx.lineTo(canvas.width, originY + 0.5);
+
+  ctx.moveTo(originX + 0.5, 0);
+  ctx.lineTo(originX + 0.5, canvas.height);
+
+  ctx.stroke();
+
+  // Pequenas marcações nos eixos
+  ctx.strokeStyle = COLORS.gridAxis;
+  ctx.lineWidth = 1;
+
+  ctx.beginPath();
+
+  for (let i = -10; i <= 10; i++) {
+    if (i === 0) continue;
+
+    const x = toCanvasX(i);
+    const y = toCanvasY(i);
+
+    if (x >= 0 && x <= canvas.width) {
+      ctx.moveTo(x, originY - 3);
+      ctx.lineTo(x, originY + 3);
+    }
+
+    if (y >= 0 && y <= canvas.height) {
+      ctx.moveTo(originX - 3, y);
+      ctx.lineTo(originX + 3, y);
+    }
+  }
+
+  ctx.stroke();
+}
+
+function drawNumbers() {
+  ctx.fillStyle = COLORS.numbers;
+  ctx.font = "11px system-ui, sans-serif";
+
+  // Números do eixo x
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  for (let i = -10; i <= 10; i++) {
+    if (i === 0) continue;
+
+    const x = toCanvasX(i);
+
+    if (x >= 0 && x <= canvas.width) {
+      ctx.fillText(String(i), x, originY + 7);
+    }
+  }
+
+  // Números do eixo y
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+
+  for (let i = -6; i <= 6; i++) {
+    if (i === 0) continue;
+
+    const y = toCanvasY(i);
+
+    if (y >= 0 && y <= canvas.height) {
+      ctx.fillText(String(i), originX - 7, y);
+    }
+  }
+
+  // Origem
+  ctx.textAlign = "right";
+  ctx.textBaseline = "top";
+  ctx.fillText("0", originX - 7, originY + 7);
+}
+
+/* =========================================================
+   CURVA E ASSÍNTOTA
+   ========================================================= */
+function drawLogCurve() {
+  ctx.strokeStyle = COLORS.curve;
+  ctx.lineWidth = 3;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  let started = false;
+  let previousCanvasX = null;
+  const asymptote = getAsymptotePos();
+
+  ctx.beginPath();
+
+  for (let x = -20; x <= 20; x += 0.025) {
+    const gx = evalG(x);
+
+    if (!(gx > 0)) {
+      started = false;
+      previousCanvasX = null;
+      continue;
+    }
+
+    const y = Math.log(gx) / Math.log(currentBase);
+    const cx = toCanvasX(x);
+    const cy = toCanvasY(y);
+
+    if (!Number.isFinite(cy)) {
+      started = false;
+      previousCanvasX = null;
+      continue;
+    }
+
+    const nearAsymptote =
+      Math.abs(x - asymptote) < 0.035;
+
+    const outsideVertical =
+      cy < -120 || cy > canvas.height + 120;
+
+    if (nearAsymptote || outsideVertical) {
+      started = false;
+      previousCanvasX = cx;
+      continue;
+    }
+
+    const jumpsTooFar =
+      previousCanvasX !== null &&
+      Math.abs(cx - previousCanvasX) > scale * 1.5;
+
+    if (!started || jumpsTooFar) {
+      ctx.moveTo(cx, cy);
+      started = true;
+    } else {
+      ctx.lineTo(cx, cy);
+    }
+
+    previousCanvasX = cx;
+  }
+
+  ctx.stroke();
+}
+
+function drawAsymptote() {
+  const x = toCanvasX(getAsymptotePos());
+
+  if (x < 0 || x > canvas.width) return;
+
+  ctx.strokeStyle = COLORS.asymptote;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6, 5]);
+
+  ctx.beginPath();
+  ctx.moveTo(x, 0);
+  ctx.lineTo(x, canvas.height);
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+}
+
+/* =========================================================
+   PONTOS
+   ========================================================= */
+function drawPoint(x, y, color, radius = 6, label = "") {
+  const cx = toCanvasX(x);
+  const cy = toCanvasY(y);
+
+  if (
+    cx < -20 || cx > canvas.width + 20 ||
+    cy < -20 || cy > canvas.height + 20
+  ) {
+    return;
+  }
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = COLORS.white;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  if (label) {
+    ctx.fillStyle = color;
+    ctx.font = "700 11px system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    ctx.fillText(label, cx + 9, cy - 8);
+  }
+}
+
+function drawUserPoints() {
+  points.forEach((p, index) => {
+    let color = COLORS.userPoint;
+
+    if (gameState === "answer") {
+      color = COLORS.wrongPoint;
+    } else if (gameState === "feedback") {
+      color = pointResults[index] ? COLORS.correctPoint : COLORS.wrongPoint;
+    }
+
+    drawPoint(p.x, p.y, color, 6, `P${index + 1}`);
+  });
+}
+
+function drawCorrectPoints() {
+  const answer = getExpectedAnswer();
+
+  answer.roots.forEach((x, index) => {
+    drawPoint(x, 0, COLORS.correctPoint, 5, `R${index + 1}`);
+  });
+
+  answer.basePoints.forEach((x, index) => {
+    drawPoint(x, 1, COLORS.answer, 5, `B${index + 1}`);
+  });
+}
+
+/* =========================================================
+   CLIQUE NO CANVAS
+   ========================================================= */
+canvas.addEventListener("mousedown", (event) => {
+  if (gameState !== "waiting") return;
+
+  event.preventDefault();
+
+  const rect = canvas.getBoundingClientRect();
+
+  // Corrige a posição quando o canvas estiver visualmente reduzido
+  // por CSS em telas menores.
+  const canvasX =
+    (event.clientX - rect.left) * (canvas.width / rect.width);
+
+  const canvasY =
+    (event.clientY - rect.top) * (canvas.height / rect.height);
+
+  const rawX = toPlaneX(canvasX);
+  const rawY = toPlaneY(canvasY);
+
+  // A seleção usa uma malha fina o suficiente para permitir pontos
+  // em praticamente qualquer trecho da curva.
+  const snapStepX = 0.1;
+  const snapStepY = 0.1;
+
+  const snappedX =
+    Math.round(rawX / snapStepX) * snapStepX;
+
+  const snappedY =
+    Math.round(rawY / snapStepY) * snapStepY;
+
+  if (points.length >= 2) {
+    points.shift();
+  }
+
+  points.push({
+    x: Number(snappedX.toFixed(2)),
+    y: Number(snappedY.toFixed(2))
+  });
+
+  syncInputsWithPoints();
+
+  // O clique apenas desenha o ponto.
+  // A grade, os eixos e os números permanecem exatamente
+  // com as mesmas cores.
+  drawPlane();
+});
+
+function syncInputsWithPoints() {
+  [1, 2, 3, 4].forEach((n) => {
+    const p = points[n - 1];
+    inputs[`p${n}x`].value = p ? p.x : "";
+    inputs[`p${n}y`].value = p ? p.y : "";
+  });
+}
+
+function syncPointsWithInputs() {
+  if (gameState !== "waiting") return;
+
+  const maxPoints = funcType === "quadratic" ? 4 : 2;
+  const nextPoints = [];
+
+  for (let n = 1; n <= maxPoints; n++) {
+    const xValue = inputs[`p${n}x`].value;
+    const yValue = inputs[`p${n}y`].value;
+    const x = Number(xValue);
+    const y = Number(yValue);
+
+    if (xValue !== "" && yValue !== "" && Number.isFinite(x) && Number.isFinite(y)) {
+      nextPoints.push({ x, y });
+    }
+  }
+
+  points = nextPoints;
+  drawPlane();
+}
+
+Object.values(inputs).forEach((input) => {
+  if (input.type === "number") {
+    input.addEventListener("input", syncPointsWithInputs);
+  }
+});
+
+/* =========================================================
+   VALIDAÇÃO
+   ========================================================= */
+function isClose(a, b, tolerance = 0.02) {
+  return Number.isFinite(a) &&
+         Number.isFinite(b) &&
+         Math.abs(a - b) <= tolerance;
+}
+
+/*
+ * O ponto não precisa mais ser raiz nem ponto da base.
+ * Basta estar sobre a curva da função gerada.
+ *
+ * A tolerância é expressa em unidades do plano cartesiano. Isso é
+ * especialmente útil para pontos selecionados com o mouse, pois a
+ * coordenada é arredondada para décimos.
+ */
+function getCurveY(x) {
+  const g = evalG(x);
+
+  if (!Number.isFinite(g) || g <= 0) return null;
+  if (!Number.isFinite(currentBase) || currentBase <= 0 || currentBase === 1) return null;
+
+  const y = Math.log(g) / Math.log(currentBase);
+  return Number.isFinite(y) ? y : null;
+}
+
+function isPointOnCurve(point, tolerance = 0.16) {
+  if (!point || !point.complete) return false;
+
+  const expectedY = getCurveY(point.x);
+  if (expectedY === null) return false;
+
+  return Math.abs(point.y - expectedY) <= tolerance;
+}
+
+function getUserPoints() {
+  const count = funcType === "quadratic" ? 4 : 2;
+  const result = [];
+
+  for (let n = 1; n <= count; n++) {
+    const xValue = inputs[`p${n}x`].value;
+    const yValue = inputs[`p${n}y`].value;
+    const x = Number(xValue);
+    const y = Number(yValue);
+
+    result.push({
+      x,
+      y,
+      complete: xValue !== "" && yValue !== "" &&
+        Number.isFinite(x) && Number.isFinite(y)
+    });
+  }
+
+  return result;
+}
+
+function getUserData() {
+  return {
+    points: getUserPoints(),
+    behavior: inputs.behavior.value,
+    asymptote: Number(inputs.asymptote.value)
+  };
+}
+
+function validateUserAnswer() {
+  const user = getUserData();
+  const expected = getExpectedAnswer();
+  const requiredCount = funcType === "quadratic" ? 4 : 2;
+
+  if (user.points.some((p) => !p.complete) ||
+      user.behavior === "" ||
+      inputs.asymptote.value === "") {
+    return {
+      valid: false,
+      message: funcType === "quadratic"
+        ? "Preencha os quatro pontos, o comportamento e a assíntota antes de verificar."
+        : "Preencha os dois pontos, o comportamento e a assíntota antes de verificar."
+    };
+  }
+
+  // Não existe mais distinção entre raiz e ponto da base.
+  // Cada ponto é avaliado simplesmente pela sua pertença à curva.
+  const classifications = user.points.map((point) =>
+    isPointOnCurve(point) ? "curve" : "wrong"
+  );
+
+  const pointsCorrect = classifications.every((type) => type === "curve");
+
+  return {
+    valid: true,
+    allCorrect: pointsCorrect &&
+      user.behavior === expected.behavior &&
+      isClose(user.asymptote, expected.asymptote),
+    pointsCorrect,
+    classifications,
+    behaviorCorrect: user.behavior === expected.behavior,
+    asymptoteCorrect: isClose(user.asymptote, expected.asymptote),
+    expected
+  };
+}
+
+function applyPointResult(classifications) {
+  pointResults = classifications.map((type) => type === "curve");
+
+  classifications.forEach((type, index) => {
+    const item = pointGroups[index];
+    if (!item) return;
+
+    item.group.classList.remove("correct", "incorrect");
+    item.status.className = "point-status";
+
+    if (type === "curve") {
+      item.group.classList.add("correct");
+      item.status.classList.add("correct");
+      item.status.textContent = "✓ Ponto sobre a curva";
+    } else {
+      item.group.classList.add("incorrect");
+      item.status.classList.add("incorrect");
+      item.status.textContent = type === "empty" ? "✕ Ponto não preenchido" : "✕ Ponto fora da curva";
+    }
+  });
+}
+
+function applyFieldResult(element, correct) {
+  const group = element.closest(".form-group");
+  if (!group) return;
+  group.classList.remove("result-correct", "result-incorrect");
+  group.classList.add(correct ? "result-correct" : "result-incorrect");
+}
+
+function handleSubmit() {
+  if (gameState !== "waiting") {
+    generateProblem();
+    return;
+  }
+
+  const result = validateUserAnswer();
+
+  if (!result.valid) {
+    window.alert(result.message);
+    return;
+  }
+
+  gameState = "feedback";
+  applyPointResult(result.classifications);
+  applyFieldResult(inputs.behavior, result.behaviorCorrect);
+  applyFieldResult(inputs.asymptote, result.asymptoteCorrect);
+
+  if (result.allCorrect) {
+    const pointsByLevel =
+      funcType === "normal" ? 100 :
+      funcType === "linear" ? 150 : 250;
+
+    score += pointsByLevel;
+    hits++;
+
+    feedbackEl.className = "feedback show success";
+    feedbackEl.innerHTML = `
+      <h3>Excelente! Tudo correto. 🎉</h3>
+      <ul>
+        <li><strong>Raiz:</strong> ${formatRoots(result.expected.roots)}</li>
+        <li><strong>Ponto da base:</strong> ${formatBasePoints(result.expected.basePoints)}</li>
+        <li><strong>Comportamento:</strong> ${formatBehavior(result.expected.behavior)}</li>
+        <li><strong>Assíntota:</strong> x = ${formatNumber(result.expected.asymptote)}</li>
+      </ul>
+    `;
+  } else {
+    score = Math.max(0, score - 30);
+    misses++;
+
+    feedbackEl.className = "feedback show error";
+
+    const details = [];
+
+    if (!result.pointsCorrect) {
+      details.push(
+        funcType === "quadratic"
+          ? `<li><strong>Pontos:</strong> os quatro pontos informados precisam estar sobre a curva da função.</li>`
+          : `<li><strong>Pontos:</strong> os dois pontos informados precisam estar sobre a curva da função.</li>`
+      );
+    }
+
+    if (!result.behaviorCorrect) {
+      details.push(
+        `<li><strong>Comportamento:</strong> ${formatBehavior(result.expected.behavior)}.</li>`
+      );
+    }
+
+    if (!result.asymptoteCorrect) {
+      details.push(
+        `<li><strong>Assíntota:</strong> x = ${formatNumber(result.expected.asymptote)}.</li>`
+      );
+    }
+
+    feedbackEl.innerHTML = `
+      <h3>Há alguns pontos para corrigir. 📉</h3>
+      <ul>${details.join("")}</ul>
+    `;
+  }
+
+  updateHUD();
+  btnSubmit.textContent = "Próximo Desafio ➔";
+  btnAnswer.disabled = true;
+
+  drawPlane();
+}
+
+/* =========================================================
+   MOSTRAR RESPOSTA
+   ========================================================= */
+function handleShowAnswer() {
+  if (gameState !== "waiting") return;
+
+  const expected = getExpectedAnswer();
+
+  // Revelar a resposta equivale a não acertar o desafio.
+  score = Math.max(0, score - 30);
+  misses++;
+
+  gameState = "answer";
+
+  const answerClassifications = getUserPoints().map((point) =>
+    point.complete ? "wrong" : "empty"
+  );
+  applyPointResult(answerClassifications);
+  applyFieldResult(inputs.behavior, false);
+  applyFieldResult(inputs.asymptote, false);
+
+  feedbackEl.className = "feedback show answer";
+  feedbackEl.innerHTML = `
+    <h3>Resposta revelada — desafio não contabilizado como acerto.</h3>
+    <ul>
+      <li><strong>Raiz:</strong> ${formatRoots(expected.roots)}</li>
+      <li><strong>Ponto da base:</strong> ${formatBasePoints(expected.basePoints)}</li>
+      <li><strong>Comportamento:</strong> ${formatBehavior(expected.behavior)}</li>
+      <li><strong>Assíntota vertical:</strong> x = ${formatNumber(expected.asymptote)}</li>
+    </ul>
+  `;
+
+  updateHUD();
+
+  btnSubmit.textContent = "Próximo Desafio ➔";
+  btnAnswer.disabled = true;
+
+  // Os pontos que o usuário colocou ficam vermelhos.
+  // Os pontos corretos aparecem no plano automaticamente.
+  drawPlane();
+}
+
+function formatRoots(roots) {
+  return roots
+    .map((x) => `( ${formatNumber(x)}, 0 )`)
+    .join(" ou ");
+}
+
+function formatBasePoints(pointsX) {
+  return pointsX
+    .map((x) => `( ${formatNumber(x)}, 1 )`)
+    .join(" ou ");
+}
+
+function formatBehavior(value) {
+  const labels = {
+    crescente: "Crescente",
+    decrescente: "Decrescente",
+    cres_dec: "Desce e sobe (∪)",
+    dec_cres: "Sobe e desce (∩)"
+  };
+
+  return labels[value] || "—";
+}
+
+/* =========================================================
+   FEEDBACK / HUD
+   ========================================================= */
+function resetFeedback() {
+  feedbackEl.className = "feedback";
+  feedbackEl.innerHTML = "";
+}
+
+function updateHUD() {
+  uiScore.textContent = score;
+  uiHits.textContent = hits;
+  uiMisses.textContent = misses;
+}
+
+/* =========================================================
+   EVENTOS
+   ========================================================= */
+diffSelect.addEventListener("change", generateProblem);
+btnSubmit.addEventListener("click", handleSubmit);
+btnAnswer.addEventListener("click", handleShowAnswer);
+
+window.addEventListener("resize", adjustEquationSize);
+
+/* =========================================================
+   INÍCIO
+   ========================================================= */
+updateHUD();
+generateProblem();
+</script>
+</body>
+</html>

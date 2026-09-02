@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo: MMC e MDC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f9ff;
+            color: #1e293b;
+        }
+        .font-mono {
+            font-family: 'Fira Code', monospace;
+        }
+        .fact-col-left {
+            width: 50%;
+            text-align: right;
+            padding-right: 1.5rem;
+            border-right: 3px solid #0f172a;
+        }
+        .fact-col-right {
+            width: 50%;
+            text-align: left;
+            padding-left: 1.5rem;
+        }
+        .transition-all {
+            transition: all 0.3s ease;
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-8 px-4 flex justify-center items-start">
+
+    <div class="max-w-3xl w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+        
+        <!-- Cabeçalho -->
+        <div class="bg-blue-600 text-white text-center py-6 px-4">
+            <h1 class="text-3xl font-bold tracking-tight mb-2">JOGO: MMC E MDC</h1>
+            <p class="text-blue-100 font-medium">Método da Fatoração Simultânea</p>
+        </div>
+
+        <div class="p-6 md:p-10">
+            
+            <!-- Instruções -->
+            <div id="instructions" class="text-center mb-8">
+                <p class="text-lg text-slate-700">Fatore os dois números até que ambos cheguem a <strong>1</strong>.</p>
+                <div class="flex flex-wrap justify-center gap-4 mt-4 text-sm bg-slate-50 p-3 rounded-lg inline-flex mx-auto border border-slate-200">
+                    <div class="flex items-center gap-2">
+                        <span class="text-blue-600 font-bold font-mono">123</span> 
+                        <span class="text-slate-600">Número modificado na divisão</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área da Tabela de Fatoração -->
+            <div class="flex justify-center mb-10">
+                <div id="factorization-board" class="w-full max-w-sm text-xl md:text-2xl font-mono text-slate-800">
+                    <!-- Linhas geradas via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Feedback de Erro/Acerto -->
+            <div id="feedback-alert" class="hidden mb-6 text-center py-3 px-4 rounded-lg font-medium border">
+            </div>
+
+            <!-- CONTROLES: Fase de Fatoração -->
+            <div id="controls-factorization" class="text-center">
+                
+                <!-- Sub-fase 1: Escolher o fator -->
+                <div id="step-choose-factor">
+                    <p class="text-slate-600 font-semibold mb-4 uppercase text-sm tracking-wider">Números primos disponíveis</p>
+                    <div class="flex flex-wrap justify-center gap-3 mb-6">
+                        <button onclick="processFactor(2)" class="prime-btn w-12 h-12 bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xl rounded-xl shadow-sm transition-all border border-blue-200">2</button>
+                        <button onclick="processFactor(3)" class="prime-btn w-12 h-12 bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xl rounded-xl shadow-sm transition-all border border-blue-200">3</button>
+                        <button onclick="processFactor(5)" class="prime-btn w-12 h-12 bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xl rounded-xl shadow-sm transition-all border border-blue-200">5</button>
+                        <button onclick="processFactor(7)" class="prime-btn w-12 h-12 bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xl rounded-xl shadow-sm transition-all border border-blue-200">7</button>
+                        <button onclick="processFactor(11)" class="prime-btn w-12 h-12 bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xl rounded-xl shadow-sm transition-all border border-blue-200">11</button>
+                        <button onclick="processFactor(13)" class="prime-btn w-12 h-12 bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-xl rounded-xl shadow-sm transition-all border border-blue-200">13</button>
+                    </div>
+                    <div class="flex justify-center items-center gap-3">
+                        <span class="text-slate-500">ou digite:</span>
+                        <input type="number" id="custom-factor" class="w-20 text-center text-lg py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all" placeholder="...">
+                        <button onclick="handleCustomFactorInput()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-semibold transition-all">Enviar</button>
+                    </div>
+                </div>
+
+                <!-- Sub-fase 2: Digitar os resultados -->
+                <div id="step-input-quotients" class="hidden bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                    <p class="text-blue-800 font-semibold mb-2">Digite os resultados da divisão.</p>
+                    <p class="text-sm text-blue-600 mb-6">Se o número não for divisível pelo fator, apenas repita-o.</p>
+                    <button onclick="verifyQuotients()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-md transition-all hover:-translate-y-0.5">
+                        Confirmar Divisão
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- CONTROLES: Fase do Quiz (Perguntar MMC e MDC) -->
+            <div id="controls-quiz" class="hidden text-center bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                <h2 class="text-2xl font-bold text-blue-600 mb-2">🎉 Fatoração concluída!</h2>
+                <p class="text-slate-600 mb-6">Agora, calcule os resultados finais baseados na fatoração.</p>
+                
+                <div class="flex flex-col md:flex-row justify-center gap-6 mb-8">
+                    <div class="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                        <label for="mmc-input" class="font-bold text-slate-700 text-lg">Qual é o MMC?</label>
+                        <input type="number" id="mmc-input" class="w-28 text-center text-xl font-bold py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all">
+                    </div>
+                    <div class="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                        <label for="mdc-input" class="font-bold text-slate-700 text-lg">Qual é o MDC?</label>
+                        <input type="number" id="mdc-input" class="w-28 text-center text-xl font-bold py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all">
+                    </div>
+                </div>
+
+                <button onclick="verifyFinalAnswers()" class="bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-3 px-10 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                    VERIFICAR
+                </button>
+            </div>
+
+            <!-- CONTROLES: Resultados Finais -->
+            <div id="controls-result" class="hidden">
+                <h2 class="text-2xl font-bold text-center text-slate-800 mb-6 uppercase tracking-wider">Resultado</h2>
+                
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <div id="card-mmc" class="p-6 rounded-2xl border-2 flex flex-col items-center justify-center text-center">
+                        <h3 class="text-xl font-bold text-slate-700 mb-2">MMC</h3>
+                        <div id="result-mmc-user" class="text-3xl font-bold font-mono mb-2"></div>
+                        <div id="result-mmc-correct" class="text-sm font-semibold"></div>
+                    </div>
+                    <div id="card-mdc" class="p-6 rounded-2xl border-2 flex flex-col items-center justify-center text-center">
+                        <h3 class="text-xl font-bold text-slate-700 mb-2">MDC</h3>
+                        <div id="result-mdc-user" class="text-3xl font-bold font-mono mb-2"></div>
+                        <div id="result-mdc-correct" class="text-sm font-semibold mb-3"></div>
+                        <div id="result-mdc-factors" class="text-sm bg-white bg-opacity-50 px-3 py-1 rounded-lg font-mono"></div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button onclick="initGame()" class="bg-slate-800 hover:bg-slate-900 text-white text-lg font-bold py-3 px-10 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                        NOVA RODADA
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const ALLOWED_PRIMES = [2, 3, 5, 7, 11, 13];
+        
+        const state = {
+            n1: 0,
+            n2: 0,
+            currentN1: 0,
+            currentN2: 0,
+            rows: [], 
+            phase: 'factorization', // 'factorization', 'quiz', 'result'
+            subPhase: 'factor',     // 'factor' (escolhendo primo), 'quotients' (digitando resultados)
+            pendingFactor: null,
+            feedback: { type: '', message: '' }
+        };
+
+        function generateExerciseNumber() {
+            let num;
+            let valid = false;
+            let attempts = 0;
+            while (!valid && attempts < 1000) {
+                num = 1;
+                let count = 0;
+                let current = 1;
+                while(count < 12) {
+                    let p = ALLOWED_PRIMES[Math.floor(Math.random() * ALLOWED_PRIMES.length)];
+                    if (current * p > 2000) break;
+                    current *= p;
+                    count++;
+                    if (count >= 3 && Math.random() < 0.3) break;
+                }
+                if (count >= 3 && current <= 2000) {
+                    num = current;
+                    valid = true;
+                }
+                attempts++;
+            }
+            return num;
+        }
+
+        function initGame() {
+            state.n1 = generateExerciseNumber();
+            state.n2 = generateExerciseNumber();
+            state.currentN1 = state.n1;
+            state.currentN2 = state.n2;
+            state.rows = [];
+            state.phase = 'factorization';
+            state.subPhase = 'factor';
+            state.pendingFactor = null;
+            state.feedback = { type: '', message: '' };
+            
+            document.getElementById('custom-factor').value = '';
+            document.getElementById('mmc-input').value = '';
+            document.getElementById('mdc-input').value = '';
+            
+            render();
+        }
+
+        function processFactor(p) {
+            if (state.phase !== 'factorization' || state.subPhase !== 'factor') return;
+            state.feedback = { type: '', message: '' };
+
+            if (!ALLOWED_PRIMES.includes(p)) {
+                state.feedback = { type: 'error', message: `Escolha um dos números primos disponíveis: 2, 3, 5, 7, 11 ou 13.` };
+                render();
+                return;
+            }
+
+            let dividesN1 = (state.currentN1 % p === 0);
+            let dividesN2 = (state.currentN2 % p === 0);
+
+            if (!dividesN1 && !dividesN2) {
+                state.feedback = { type: 'error', message: `❌ ${p} não divide ${state.currentN1} nem ${state.currentN2}. Escolha outro fator.` };
+                render();
+                return;
+            }
+
+            state.pendingFactor = p;
+            state.subPhase = 'quotients';
+            document.getElementById('custom-factor').value = '';
+            
+            render();
+            
+            // Focar automaticamente no primeiro input de resultado após a tela renderizar
+            setTimeout(() => {
+                const q1 = document.getElementById('q-input-1');
+                if(q1) q1.focus();
+            }, 50);
+        }
+
+        function handleCustomFactorInput() {
+            const input = document.getElementById('custom-factor');
+            const val = parseInt(input.value);
+            if (!isNaN(val)) processFactor(val);
+        }
+
+        document.getElementById('custom-factor').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') handleCustomFactorInput();
+        });
+
+        function verifyQuotients() {
+            const val1 = parseInt(document.getElementById('q-input-1').value);
+            const val2 = parseInt(document.getElementById('q-input-2').value);
+
+            if (isNaN(val1) || isNaN(val2)) {
+                state.feedback = { type: 'error', message: 'Preencha os dois campos com os resultados ou repita o número.' };
+                render();
+                return;
+            }
+
+            const exp1 = (state.currentN1 % state.pendingFactor === 0) ? state.currentN1 / state.pendingFactor : state.currentN1;
+            const exp2 = (state.currentN2 % state.pendingFactor === 0) ? state.currentN2 / state.pendingFactor : state.currentN2;
+
+            if (val1 === exp1 && val2 === exp2) {
+                state.rows.push({
+                    val1: state.currentN1,
+                    val2: state.currentN2,
+                    factor: state.pendingFactor,
+                    dividesN1: (state.currentN1 % state.pendingFactor === 0),
+                    dividesN2: (state.currentN2 % state.pendingFactor === 0),
+                    dividesBoth: ((state.currentN1 % state.pendingFactor === 0) && (state.currentN2 % state.pendingFactor === 0))
+                });
+
+                state.currentN1 = exp1;
+                state.currentN2 = exp2;
+                state.pendingFactor = null;
+                state.subPhase = 'factor';
+                state.feedback = { type: 'success', message: '✓ Divisão correta!' };
+
+                if (state.currentN1 === 1 && state.currentN2 === 1) {
+                    state.phase = 'quiz';
+                    state.feedback = { type: '', message: '' };
+                }
+                render();
+            } else {
+                state.feedback = { type: 'error', message: '❌ Valores incorretos. Dica: se o número não dividir pelo fator, repita-o.' };
+                render();
+            }
+        }
+
+        // Permitir navegação por Enter nos inputs de divisão
+        function handleQuotientEnter(e, nextId) {
+            if (e.key === 'Enter') {
+                if (nextId === 'submit') verifyQuotients();
+                else document.getElementById(nextId).focus();
+            }
+        }
+
+        function verifyFinalAnswers() {
+            const inputMMC = parseInt(document.getElementById('mmc-input').value);
+            const inputMDC = parseInt(document.getElementById('mdc-input').value);
+
+            if (isNaN(inputMMC) || isNaN(inputMDC)) {
+                alert("Por favor, preencha ambos os campos antes de verificar.");
+                return;
+            }
+
+            let correctMMC = 1;
+            let correctMDC = 1;
+            let mdcFactors = [];
+
+            state.rows.forEach(row => {
+                correctMMC *= row.factor;
+                if (row.dividesBoth) {
+                    correctMDC *= row.factor;
+                    mdcFactors.push(row.factor);
+                }
+            });
+
+            setupResultCard('mmc', inputMMC, correctMMC, null);
+            setupResultCard('mdc', inputMDC, correctMDC, mdcFactors);
+
+            state.phase = 'result';
+            render();
+        }
+
+        function setupResultCard(type, userValue, correctValue, factors) {
+            const isCorrect = (userValue === correctValue);
+            const card = document.getElementById(`card-${type}`);
+            const userEl = document.getElementById(`result-${type}-user`);
+            const correctEl = document.getElementById(`result-${type}-correct`);
+            
+            card.className = "p-6 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all";
+            
+            if (isCorrect) {
+                card.classList.add("bg-green-50", "border-green-300");
+                userEl.innerHTML = `${userValue} <span class="text-green-600">✓</span>`;
+                userEl.classList.add("text-green-700");
+                userEl.classList.remove("text-red-600");
+                correctEl.innerHTML = "";
+            } else {
+                card.classList.add("bg-red-50", "border-red-300");
+                userEl.innerHTML = `${userValue} <span class="text-red-600">✗</span>`;
+                userEl.classList.add("text-red-600");
+                userEl.classList.remove("text-green-700");
+                correctEl.innerHTML = `Resposta correta: <span class="text-slate-800">${correctValue}</span>`;
+                correctEl.classList.add("text-red-700");
+            }
+
+            if (type === 'mdc') {
+                const factorsEl = document.getElementById(`result-mdc-factors`);
+                if (factors.length > 0) {
+                    factorsEl.innerHTML = `Fatores do MDC: <br><span class="text-lg font-bold">${factors.join(' × ')}</span>`;
+                } else {
+                    factorsEl.innerHTML = `Fatores do MDC: Nenhum (MDC = 1)`;
+                }
+            }
+        }
+
+        function render() {
+            const board = document.getElementById('factorization-board');
+            let html = '';
+            const isResultPhase = state.phase === 'result';
+
+            // Histórico de Fatoração
+            state.rows.forEach(row => {
+                const classN1 = row.dividesN1 ? "text-blue-600 font-bold" : "text-slate-500";
+                const classN2 = row.dividesN2 ? "text-blue-600 font-bold" : "text-slate-500";
+                
+                // MDC é destacado apenas na fase final de resultados
+                const factorClasses = (isResultPhase && row.dividesBoth) 
+                    ? "bg-green-100 text-green-800 font-bold px-2 rounded-full inline-block text-center" 
+                    : "px-2 text-slate-700";
+
+                html += `
+                    <div class="flex leading-loose">
+                        <div class="fact-col-left">
+                            <span class="${classN1}">${row.val1}</span>, <span class="${classN2}">${row.val2}</span>
+                        </div>
+                        <div class="fact-col-right">
+                            <span class="${factorClasses} min-w-[2rem]">${row.factor}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Linha(s) de Ação Atual
+            if (state.phase === 'factorization') {
+                if (state.subPhase === 'factor') {
+                    html += `
+                        <div class="flex leading-loose items-center">
+                            <div class="fact-col-left font-bold text-slate-800">
+                                ${state.currentN1}, ${state.currentN2}
+                            </div>
+                            <div class="fact-col-right flex items-center text-slate-300">
+                                <span class="animate-pulse">_</span>
+                            </div>
+                        </div>
+                    `;
+                } else if (state.subPhase === 'quotients') {
+                    // Mostrar a linha atual com o fator selecionado
+                    html += `
+                        <div class="flex leading-loose items-center">
+                            <div class="fact-col-left font-bold text-slate-800">
+                                ${state.currentN1}, ${state.currentN2}
+                            </div>
+                            <div class="fact-col-right text-slate-700">
+                                <span class="px-2 font-bold">${state.pendingFactor}</span>
+                            </div>
+                        </div>
+                        <!-- Inputs para os resultados da divisão -->
+                        <div class="flex leading-loose items-center mt-2">
+                            <div class="fact-col-left flex justify-end gap-2 text-base md:text-xl">
+                                <input type="number" id="q-input-1" onkeypress="handleQuotientEnter(event, 'q-input-2')" class="w-16 md:w-20 text-center py-1 border-2 border-blue-300 bg-blue-50 rounded-lg focus:outline-none focus:border-blue-600" />
+                                <span class="text-slate-800 font-bold self-center">,</span>
+                                <input type="number" id="q-input-2" onkeypress="handleQuotientEnter(event, 'submit')" class="w-16 md:w-20 text-center py-1 border-2 border-blue-300 bg-blue-50 rounded-lg focus:outline-none focus:border-blue-600" />
+                            </div>
+                            <div class="fact-col-right flex items-center text-slate-300">
+                                <span class="animate-pulse">_</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                // Chegou a 1, 1
+                html += `
+                    <div class="flex leading-loose">
+                        <div class="fact-col-left font-bold text-slate-800">
+                            1, 1
+                        </div>
+                        <div class="fact-col-right">
+                        </div>
+                    </div>
+                `;
+            }
+            board.innerHTML = html;
+
+            // Renderizar Feedback
+            const feedbackEl = document.getElementById('feedback-alert');
+            if (state.feedback.message) {
+                feedbackEl.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800', 'border-red-200', 'border-green-200');
+                if (state.feedback.type === 'error') {
+                    feedbackEl.classList.add('bg-red-100', 'text-red-800', 'border-red-200');
+                } else {
+                    feedbackEl.classList.add('bg-green-100', 'text-green-800', 'border-green-200');
+                }
+                feedbackEl.innerHTML = state.feedback.message;
+            } else {
+                feedbackEl.classList.add('hidden');
+            }
+
+            // Alternância de Telas / Controles
+            const ctrlFactorization = document.getElementById('controls-factorization');
+            const stepFactor = document.getElementById('step-choose-factor');
+            const stepQuotients = document.getElementById('step-input-quotients');
+            
+            const ctrlQuiz = document.getElementById('controls-quiz');
+            const ctrlResult = document.getElementById('controls-result');
+            const instructions = document.getElementById('instructions');
+
+            if (state.phase === 'factorization') {
+                ctrlFactorization.classList.remove('hidden');
+                ctrlQuiz.classList.add('hidden');
+                ctrlResult.classList.add('hidden');
+                instructions.classList.remove('hidden');
+
+                if (state.subPhase === 'factor') {
+                    stepFactor.classList.remove('hidden');
+                    stepQuotients.classList.add('hidden');
+                } else {
+                    stepFactor.classList.add('hidden');
+                    stepQuotients.classList.remove('hidden');
+                }
+            } 
+            else if (state.phase === 'quiz') {
+                ctrlFactorization.classList.add('hidden');
+                ctrlQuiz.classList.remove('hidden');
+                ctrlResult.classList.add('hidden');
+                instructions.classList.add('hidden');
+            }
+            else if (state.phase === 'result') {
+                ctrlFactorization.classList.add('hidden');
+                ctrlQuiz.classList.add('hidden');
+                ctrlResult.classList.remove('hidden');
+                instructions.classList.add('hidden');
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>

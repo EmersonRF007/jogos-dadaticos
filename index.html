@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub de Jogos Educacionais</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Cabeçalho com imagem de fundo -->
+    <header class="hero-header">
+        <div class="hero-overlay"></div>
+        <div class="header-content">
+            <h1>Jogos Educacionais</h1>
+            <p>Selecione um jogo abaixo para iniciar a atividade</p>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Buscar jogo pelo nome...">
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Sistema de Filtros -->
+        <section class="filters-section">
+            
+            <!-- Filtro de Área do Conhecimento -->
+            <div class="filter-group">
+                <span class="filter-label">Área do Conhecimento:</span>
+                <div id="areaContainer" class="filter-buttons">
+                    <!-- Botões de área injetados via JS -->
+                </div>
+            </div>
+
+            <!-- Filtro de Tags (dinâmico baseado na área) -->
+            <div class="filter-group">
+                <span class="filter-label">Assuntos:</span>
+                <div id="tagContainer" class="filter-buttons">
+                    <!-- Botões de tags injetados via JS -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Vitrine de Jogos -->
+        <section class="games-section">
+            <div id="gamesGrid" class="games-grid">
+                <!-- Os cards dos jogos serão injetados aqui pelo JavaScript -->
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

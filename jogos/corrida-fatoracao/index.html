@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corrida da Fatoração</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --panel:#111827;
+    --panel2:#1f2937;
+    --text:#f8fafc;
+    --muted:#cbd5e1;
+    --accent:#f59e0b;
+    --good:#22c55e;
+    --bad:#ef4444;
+    --road:#334155;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:linear-gradient(180deg,#0f172a,#111827);
+    color:var(--text);
+    display:flex;
+    justify-content:center;
+    padding:16px;
+  }
+
+  .app{
+    width:min(1180px,100%);
+  }
+  
+  /* Link para Home */
+  .home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #cbd5e1;
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 16px;
+    font-size: 1rem;
+    transition: color 0.2s;
+  }
+  .home-link:hover { color: #fff; }
+  .home-link span { font-size: 1.2rem; }
+
+  header{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:12px;
+  }
+
+  h1{
+    margin:0;
+    font-size:clamp(1.35rem,2.5vw,2rem);
+  }
+
+  .subtitle{
+    color:var(--muted);
+    font-size:.95rem;
+    margin-top:3px;
+  }
+
+  .controls{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  button, select{
+    border:0;
+    border-radius:10px;
+    padding:9px 12px;
+    font-weight:700;
+    cursor:pointer;
+    color:#0f172a;
+    background:#e2e8f0;
+  }
+
+  button:hover{filter:brightness(1.06)}
+  button.primary{background:var(--accent)}
+  button.dark{background:#cbd5e1}
+  button:disabled{opacity:.45;cursor:not-allowed}
+
+  /* Modificado para comportar 7 colunas (incluindo Vidas) */
+  .hud{
+    display:grid;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    gap:8px;
+    margin-bottom:10px;
+  }
+
+  .card{
+    background:rgba(17,24,39,.95);
+    border:1px solid #334155;
+    border-radius:12px;
+    padding:9px 11px;
+    min-height:64px;
+  }
+  .label{
+    color:#94a3b8;
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+  }
+  .value{
+    margin-top:2px;
+    font-weight:800;
+    font-size:1.18rem;
+  }
+
+  .gameWrap{
+    background:#020617;
+    border:1px solid #334155;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
+  }
+
+  canvas{
+    display:block;
+    width:100%;
+    height:auto;
+    background:#87ceeb;
+  }
+
+  .bottom{
+    margin-top:10px;
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:10px;
+  }
+
+  .panel{
+    background:rgba(17,24,39,.95);
+    border:1px solid #334155;
+    border-radius:12px;
+    padding:12px;
+  }
+
+  .panel h2{
+    font-size:1rem;
+    margin:0 0 8px;
+  }
+
+  .factorLine{
+    font-size:1.08rem;
+    min-height:28px;
+    font-weight:700;
+  }
+
+  .factorLine span{
+    display:inline-block;
+    margin-right:4px;
+    padding:2px 6px;
+    border-radius:6px;
+    background:#334155;
+  }
+
+  .history{
+    color:#cbd5e1;
+    font-size:.9rem;
+    line-height:1.45;
+  }
+
+  .status{
+    margin-top:8px;
+    min-height:22px;
+    font-weight:700;
+  }
+  .good{color:var(--good)}
+  .bad{color:var(--bad)}
+  .info{color:#fbbf24}
+
+  .keys{
+    margin-top:8px;
+    color:#94a3b8;
+    font-size:.88rem;
+  }
+
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(2,6,23,.78);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    z-index:20;
+  }
+
+  .overlay.show{display:flex}
+  .modal{
+    width:min(560px,100%);
+    background:#111827;
+    border:1px solid #475569;
+    border-radius:16px;
+    padding:22px;
+    text-align:center;
+  }
+  .modal h2{
+    margin:0 0 8px;
+    font-size:1.65rem;
+  }
+  .modal p{
+    color:#cbd5e1;
+    line-height:1.5;
+  }
+  .result{
+    margin:14px 0;
+    padding:12px;
+    background:#0f172a;
+    border-radius:12px;
+    text-align:left;
+  }
+
+  @media (max-width:900px){
+    .hud{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .bottom{grid-template-columns:1fr}
+  }
+
+  @media (max-width:560px){
+    .hud{grid-template-columns:repeat(2,minmax(0,1fr))}
+    body{padding:8px}
+  }
+
+  .gameWrap{position:relative}
+  .startOverlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(2,6,23,.62);
+    z-index:5;
+    backdrop-filter:blur(2px);
+  }
+  .startOverlay.hidden{display:none}
+  .startCard{
+    width:min(520px,88%);
+    background:rgba(17,24,39,.97);
+    border:1px solid #64748b;
+    border-radius:18px;
+    padding:26px;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+  }
+  .startIcon{font-size:3.2rem}
+  .startCard h2{margin:8px 0 8px;font-size:1.65rem}
+  .startCard p{margin:0;color:#cbd5e1;line-height:1.5}
+  .startButton{margin-top:18px;font-size:1.05rem;padding:12px 24px}
+  .startHint{margin-top:12px;font-size:.82rem;color:#94a3b8}
+
+</style>
+</head>
+<body>
+<div class="app">
+  
+  <!-- Atalho para Voltar a Home -->
+  <a href="../../index.html" class="home-link">
+    <span>←</span> Voltar para Home
+  </a>
+
+  <header>
+    <div>
+      <h1>🏁 Corrida da Fatoração</h1>
+      <div class="subtitle">Pegue os fatores primos corretos, alcance o 1 e sobreviva!</div>
+    </div>
+    <div class="controls">
+      <select id="difficulty" title="Dificuldade">
+        <option value="easy">Fácil</option>
+        <option value="medium" selected>Médio</option>
+        <option value="hard">Difícil</option>
+      </select>
+      <button class="primary" id="newGame">Nova corrida</button>
+      <button class="dark" id="pauseBtn">Pausar</button>
+    </div>
+  </header>
+
+  <section class="hud">
+    <div class="card"><div class="label">Vidas</div><div class="value" id="lives">♥♥♥</div></div>
+    <div class="card"><div class="label">Número atual</div><div class="value" id="currentNumber">—</div></div>
+    <div class="card"><div class="label">Número inicial</div><div class="value" id="initialNumber">—</div></div>
+    <div class="card"><div class="label">Pontuação</div><div class="value" id="score">0</div></div>
+    <div class="card"><div class="label">Erros</div><div class="value" id="errors">0</div></div>
+    <div class="card"><div class="label">Tempo</div><div class="value" id="time">0,0 s</div></div>
+    <div class="card"><div class="label">Progresso</div><div class="value" id="progress">0%</div></div>
+  </section>
+
+  <div class="gameWrap">
+    <canvas id="game" width="1280" height="520"></canvas>
+    <div class="startOverlay" id="startOverlay">
+      <div class="startCard">
+        <div class="startIcon">🏎️</div>
+        <h2>Corrida da Fatoração</h2>
+        <p>Você tem <strong>3 Vidas</strong>. Controle o carrinho, pegue apenas os números primos que dividem exatamente o número atual e chegue até <strong>1</strong> para avançar para o próximo nível!</p>
+        <button class="primary startButton" id="startBtn">▶ START</button>
+        <div class="startHint">Setas do Teclado para mover • Espaço para pausar</div>
+      </div>
+    </div>
+  </div>
+
+  <section class="bottom">
+    <div class="panel">
+      <h2>Fatores coletados (Número Atual)</h2>
+      <div id="factors" class="factorLine">Nenhum ainda.</div>
+      <div id="history" class="history">A corrida começa automaticamente.</div>
+      <div id="status" class="status info">Use ↑ ↓ ← → para mover.</div>
+      <div class="keys">Teclado: Setas = mover • Espaço = pausar • R = nova corrida</div>
+    </div>
+    <div class="panel">
+      <h2>Números primos disponíveis</h2>
+      <div class="factorLine">
+        <span>2</span><span>3</span><span>5</span><span>7</span><span>11</span>
+      </div>
+      <div class="keys">Um primo só é válido quando divide exatamente o número atual.</div>
+    </div>
+  </section>
+</div>
+
+<div id="overlay" class="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Fim de Jogo!</h2>
+    <p id="modalText"></p>
+    <div class="result" id="modalResult"></div>
+    <button class="primary" id="againBtn">Jogar novamente</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const UI = {
+  currentNumber: document.getElementById("currentNumber"),
+  initialNumber: document.getElementById("initialNumber"),
+  score: document.getElementById("score"),
+  errors: document.getElementById("errors"),
+  time: document.getElementById("time"),
+  progress: document.getElementById("progress"),
+  lives: document.getElementById("lives"),
+  factors: document.getElementById("factors"),
+  history: document.getElementById("history"),
+  status: document.getElementById("status"),
+  difficulty: document.getElementById("difficulty"),
+  overlay: document.getElementById("overlay"),
+  modalTitle: document.getElementById("modalTitle"),
+  modalText: document.getElementById("modalText"),
+  modalResult: document.getElementById("modalResult"),
+  startOverlay: document.getElementById("startOverlay")
+};
+
+const PRIMES = [2, 3, 5, 7, 11];
+const LANES = [175, 285, 395];
+const ROAD_TOP = 105;
+const ROAD_BOTTOM = 465;
+// Retirado o X fixo daqui para permitir movimentação lateral
+const CAR = { width: 58, height: 34 };
+
+let game = null;
+let lastTime = 0;
+let keysMap = {};
+
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function sample(arr){
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
+function generateNumber(difficulty){
+  const limits = { easy: [3,4], medium: [4,6], hard: [6,8] };
+  const [minF,maxF] = limits[difficulty];
+
+  for(let tries=0; tries<500; tries++){
+    const wanted = minF + Math.floor(Math.random()*(maxF-minF+1));
+    const factors = [];
+    let n = 1;
+
+    const pool = shuffle(PRIMES);
+    for(let i=0;i<wanted;i++){
+      const choices = shuffle(pool.filter(p => n*p <= 2000));
+      if(!choices.length) break;
+      const p = choices[0];
+      factors.push(p);
+      n *= p;
+    }
+
+    if(factors.length >= minF && n >= 24 && n <= 2000){
+      return {number:n, factors:shuffle(factors)};
+    }
+  }
+  return {number:180, factors:[2,2,3,3,5]};
+}
+
+function appendTrackChunk(){
+  if(!game) return;
+
+  const spacing = { easy:310, medium:275, hard:245 }[game.difficulty];
+  const extraCount = { easy:5, medium:6, hard:7 }[game.difficulty];
+  const obstacleChance = { easy:.18, medium:.24, hard:.29 }[game.difficulty];
+  let x = game.trackEndX || 700;
+
+  const guarantees = Math.min(4, game.remainingFactors.length);
+  for(let i=0;i<guarantees;i++){
+    const factor = sample(game.remainingFactors);
+    x += spacing + Math.random()*90;
+    game.items.push({
+      x,
+      lane:Math.floor(Math.random()*3),
+      value:factor,
+      kind:'prime',
+      required:true,
+      collected:false
+    });
+
+    if(Math.random() < .7){
+      x += 95 + Math.random()*90;
+      game.items.push({
+        x,
+        lane:Math.floor(Math.random()*3),
+        value:sample(PRIMES),
+        kind:'prime',
+        required:false,
+        collected:false
+      });
+    }
+  }
+
+  for(let i=0;i<extraCount;i++){
+    x += 150 + Math.random()*120;
+    if(Math.random() < obstacleChance){
+      game.items.push({ x, lane:Math.floor(Math.random()*3), kind:'obstacle', collected:false });
+    }else{
+      game.items.push({ x, lane:Math.floor(Math.random()*3), value:sample(PRIMES), kind:'prime', required:false, collected:false });
+    }
+  }
+  game.trackEndX = x;
+  game.items.sort((a,b)=>a.x-b.x);
+}
+
+function startGame(){
+  const difficulty = UI.difficulty.value;
+  const generated = generateNumber(difficulty);
+
+  game = {
+    difficulty,
+    lives: 3,                 // 3 Vidas Iniciais
+    factoredCount: 0,         // Niveis passados
+    initial: generated.number,
+    current: generated.number,
+    remainingFactors: generated.factors.slice(),
+    collectedFactors: [],
+    history: [],
+    score: 0,
+    errors: 0,
+    startTime: performance.now(),
+    elapsed: 0,
+    paused:false,
+    finished:false,
+    running:false,
+    lane:1,
+    playerX: 205,             // Posição lateral inicial
+    playerY:LANES[1],
+    worldX:0,
+    speed: difficulty==="easy" ? 260 : difficulty==="medium" ? 290 : 325,
+    items:[],
+    trackEndX:650,
+    feedback:"",
+    feedbackType:"info",
+    feedbackUntil:0,
+    lastObstacleHit:-9999,
+    newNumberTimer: 0,
+    newNumberMsg: ""
+  };
+
+  appendTrackChunk();
+  appendTrackChunk();
+  UI.overlay.classList.remove("show");
+  UI.startOverlay.classList.remove("hidden");
+  UI.status.textContent = "Clique em START para começar.";
+  UI.status.className = "status info";
+  updateUI();
+}
+
+function formatFactors(factors){
+  if(!factors.length) return "Nenhum ainda.";
+  return factors.map(f=>`<span>${f}</span>`).join("×");
+}
+
+function updateUI(){
+  if(!game) return;
+
+  // Atualização Visual das Vidas
+  UI.lives.innerHTML = `<span style="color: #ef4444">${"♥".repeat(Math.max(0, game.lives))}</span><span style="color: #475569">${"♥".repeat(Math.max(0, 3-game.lives))}</span>`;
+  
+  UI.currentNumber.textContent = game.current;
+  UI.initialNumber.textContent = game.initial;
+  UI.score.textContent = Math.max(0, Math.floor(game.score));
+  UI.errors.textContent = game.errors;
+  UI.time.textContent = `${game.elapsed.toFixed(1).replace(".",",")} s`;
+
+  const total = game.collectedFactors.length + game.remainingFactors.length;
+  const pct = total ? Math.round((game.collectedFactors.length/total)*100) : 100;
+  UI.progress.textContent = `${pct}%`;
+  UI.factors.innerHTML = formatFactors(game.collectedFactors);
+
+  const lastHistory = game.history.slice(-5).reverse();
+  UI.history.innerHTML = lastHistory.length
+    ? lastHistory.map(h=>h).join("<br>")
+    : "A corrida começa automaticamente.";
+
+  UI.status.textContent = game.feedback || (game.running ? "Use as Setas para mover o carrinho." : "Clique em START para começar.");
+  UI.status.className = `status ${game.feedbackType}`;
+}
+
+function setFeedback(text,type="info",duration=1400){
+  game.feedback=text;
+  game.feedbackType=type;
+  game.feedbackUntil=performance.now()+duration;
+}
+
+function correctFactor(prime){
+  if(game.current % prime !== 0){
+    wrongFactor(prime);
+    return;
+  }
+
+  const idx = game.remainingFactors.indexOf(prime);
+  if(idx === -1){
+    wrongFactor(prime);
+    return;
+  }
+
+  const before = game.current;
+  game.current /= prime;
+  game.remainingFactors.splice(idx,1);
+  game.collectedFactors.push(prime);
+
+  game.score += 100;
+  game.history.push(`<span class="good">✓ ${before} ÷ ${prime} = ${game.current}</span>`);
+  setFeedback(`✓ ${prime} é fator de ${before}. Agora: ${game.current}`,"good",1100);
+
+  // MODO INFINITO - Geração do Próximo Número
+  if(game.current === 1){
+    game.factoredCount++;
+    game.score += 500;
+    
+    const generated = generateNumber(game.difficulty);
+    game.initial = generated.number;
+    game.current = generated.number;
+    game.remainingFactors = generated.factors.slice();
+    game.collectedFactors = [];
+
+    // Ativa holograma central
+    game.newNumberMsg = game.current;
+    game.newNumberTimer = 2.0; // 2 segundos piscando na tela
+
+    game.history.push(`<span class="good">🎉 Concluído! Novo número gerado: ${game.current}</span>`);
+    setFeedback("🏁 Fatoração concluída! Próximo número...", "good", 2000);
+  }
+}
+
+function wrongFactor(prime){
+  game.errors++;
+  game.lives--;
+  game.score -= 35;
+  game.history.push(`<span class="bad">✗ ${prime} não divide ${game.current}. -1 Vida</span>`);
+  setFeedback(`✗ ${prime} não é fator. Perdeu 1 Vida!`,"bad",1200);
+  
+  if(game.lives <= 0) finishGame();
+}
+
+function hitObstacle(){
+  const now = performance.now();
+  if(now - game.lastObstacleHit < 1200) return;
+
+  game.lastObstacleHit = now;
+  game.errors++;
+  game.lives--;
+  game.score -= 40;
+  game.speed *= 0.82;
+
+  game.history.push(`<span class="bad">⚠ Obstáculo! -1 Vida e velocidade reduzida.</span>`);
+  setFeedback("⚠ Obstáculo! Perdeu 1 Vida.","bad",1000);
+
+  if(game.lives <= 0){
+    finishGame();
+    return;
+  }
+
+  setTimeout(()=>{
+    if(game && !game.finished){
+      game.speed = game.difficulty==="easy" ? 260 : game.difficulty==="medium" ? 290 : 325;
+    }
+  },900);
+}
+
+function finishGame(){
+  game.finished=true;
+  game.elapsed = (performance.now()-game.startTime)/1000;
+  setFeedback("Fim de Jogo!","bad",999999);
+
+  UI.modalTitle.textContent = "Fim de Jogo!";
+  UI.modalText.textContent = `As suas 3 vidas acabaram.`;
+
+  UI.modalResult.innerHTML = `
+    Números fatorados completamente: <strong>${game.factoredCount}</strong><br><br>
+    Pontuação Final: <strong>${Math.max(0,Math.floor(game.score))}</strong><br>
+    Tempo Sobrevivido: <strong>${game.elapsed.toFixed(1).replace(".",",")} s</strong><br>
+    Erros Totais: <strong>${game.errors}</strong>
+  `;
+  UI.overlay.classList.add("show");
+  updateUI();
+}
+
+function launchGame(){
+  if(!game || game.finished) return;
+  game.running = true;
+  game.paused = false;
+  game.startTime = performance.now();
+  UI.startOverlay.classList.add("hidden");
+  document.getElementById("pauseBtn").textContent = "Pausar";
+  setFeedback("🏁 Valendo!","good",1000);
+  updateUI();
+}
+
+function togglePause(){
+  if(!game || game.finished || !game.running) return;
+  game.paused=!game.paused;
+  document.getElementById("pauseBtn").textContent = game.paused ? "Continuar" : "Pausar";
+}
+
+function moveLane(direction){
+  if(!game || game.finished || game.paused || !game.running) return;
+  game.lane = Math.max(0,Math.min(2,game.lane+direction));
+}
+
+document.addEventListener("keydown", (e)=>{
+  keysMap[e.key] = true;
+  if(e.key==="ArrowUp"){e.preventDefault();moveLane(-1);}
+  if(e.key==="ArrowDown"){e.preventDefault();moveLane(1);}
+  if(e.key==="ArrowLeft"){e.preventDefault();}
+  if(e.key==="ArrowRight"){e.preventDefault();}
+  if(e.key===" "){e.preventDefault();togglePause();}
+  if(e.key.toLowerCase()==="r"){startGame();}
+  if(e.key==="Enter" && game && !game.running && !game.finished){launchGame();}
+});
+
+document.addEventListener("keyup", (e)=>{
+  keysMap[e.key] = false;
+});
+
+document.getElementById("newGame").addEventListener("click",startGame);
+document.getElementById("pauseBtn").addEventListener("click",togglePause);
+document.getElementById("againBtn").addEventListener("click",startGame);
+document.getElementById("startBtn").addEventListener("click",launchGame);
+
+function rectHit(ax,ay,aw,ah,bx,by,bw,bh){
+  return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
+}
+
+function update(dt){
+  if(!game || game.paused || game.finished || !game.running) return;
+  game.elapsed = (performance.now()-game.startTime)/1000;
+
+  // Controle de Movimentação Lateral Contínua
+  if(keysMap["ArrowLeft"]) game.playerX -= 400 * dt;
+  if(keysMap["ArrowRight"]) game.playerX += 400 * dt;
+  
+  // Limites da movimentação lateral para manter na tela de forma justa
+  if(game.playerX < 60) game.playerX = 60;
+  if(game.playerX > 600) game.playerX = 600; 
+
+  const targetY = LANES[game.lane];
+  game.playerY += (targetY-game.playerY) * Math.min(1,dt*11);
+  game.worldX += game.speed*dt;
+
+  // Temporizador visual do número gigante
+  if (game.newNumberTimer > 0) {
+    game.newNumberTimer -= dt;
+  }
+
+  while(game.trackEndX - game.worldX < canvas.width * 2.2 && !game.finished){
+    appendTrackChunk();
+  }
+
+  if(game.items.length > 220){
+    game.items = game.items.filter(item => item.x > game.worldX - 500);
+  }
+
+  for(const item of game.items){
+    const sx = item.x - game.worldX;
+    const sy = LANES[item.lane] - 22;
+
+    const hit = rectHit(
+      game.playerX, game.playerY-17, CAR.width, CAR.height,
+      sx, sy, 46, 44
+    );
+
+    if(hit && !item.collected){
+      item.collected=true;
+      if(item.kind==="prime") correctFactor(item.value);
+      else if(item.kind==="obstacle") hitObstacle();
+    }
+  }
+
+  if(performance.now()>game.feedbackUntil && game.feedback){
+    game.feedback="";
+  }
+
+  game.score += dt*2.5;
+  updateUI();
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawSky();
+  drawRoad();
+  drawItems();
+  drawCar();
+
+  // Desenha o número translúcido novo na tela
+  if (game && game.newNumberTimer > 0 && !game.finished) {
+    ctx.save();
+    const alpha = Math.min(1, game.newNumberTimer * 1.5);
+    ctx.globalAlpha = alpha; 
+    ctx.fillStyle = "#f8fafc";
+    ctx.font = "900 130px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = "#1e40af"; 
+    
+    // Texto do número principal
+    ctx.strokeText(game.newNumberMsg, canvas.width / 2, canvas.height / 2 - 30);
+    ctx.fillText(game.newNumberMsg, canvas.width / 2, canvas.height / 2 - 30);
+    
+    // Subtexto "NOVO NÚMERO!"
+    ctx.font = "800 35px system-ui";
+    ctx.lineWidth = 6;
+    ctx.strokeText("NOVO NÚMERO!", canvas.width / 2, canvas.height / 2 + 55);
+    ctx.fillText("NOVO NÚMERO!", canvas.width / 2, canvas.height / 2 + 55);
+    ctx.restore();
+  }
+
+  if(game && game.paused && !game.finished){
+    ctx.fillStyle="rgba(0,0,0,.5)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle="#fff";
+    ctx.textAlign="center";
+    ctx.font="800 32px system-ui";
+    ctx.fillText("JOGO PAUSADO",canvas.width/2,canvas.height/2);
+    ctx.font="18px system-ui";
+    ctx.fillText("Pressione Espaço ou clique em Continuar",canvas.width/2,canvas.height/2+36);
+  }
+}
+
+function drawSky(){
+  const g=ctx.createLinearGradient(0,0,0,ROAD_TOP);
+  g.addColorStop(0,"#60a5fa");
+  g.addColorStop(1,"#dbeafe");
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,canvas.width,ROAD_TOP);
+
+  ctx.fillStyle="rgba(255,255,255,.72)";
+  for(let i=0;i<6;i++){
+    const x=(i*230 - (game?game.worldX*0.15:0))%1300;
+    const xx=x<0?x+1300:x;
+    const y=30+(i%3)*24;
+    ctx.beginPath();
+    ctx.arc(xx,y,18,0,Math.PI*2);
+    ctx.arc(xx+22,y+2,14,0,Math.PI*2);
+    ctx.arc(xx+40,y,17,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawRoad(){
+  ctx.fillStyle="#84cc16";
+  ctx.fillRect(0,ROAD_TOP,canvas.width,ROAD_BOTTOM-ROAD_TOP);
+  ctx.fillStyle="#475569";
+  ctx.fillRect(0,ROAD_TOP+35,canvas.width,ROAD_BOTTOM-(ROAD_TOP+70));
+
+  ctx.fillStyle="#f8fafc";
+  ctx.fillRect(0,ROAD_TOP+31,canvas.width,5);
+  ctx.fillRect(0,ROAD_BOTTOM-40,canvas.width,5);
+
+  ctx.strokeStyle="rgba(255,255,255,.35)";
+  ctx.lineWidth=4;
+  ctx.setLineDash([35,25]);
+  for(let i=0;i<2;i++){
+    const y = (LANES[i]+LANES[i+1])/2;
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(canvas.width,y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  for(let i=0;i<13;i++){
+    const x=(i*135-(game?game.worldX*0.55:0))%1250;
+    const xx=x<0?x+1250:x;
+    ctx.fillStyle="#166534";
+    ctx.fillRect(xx,ROAD_TOP+8,6,20);
+  }
+}
+
+function drawItems(){
+  if(!game) return;
+  for(const item of game.items){
+    if(item.collected) continue;
+    const x=item.x-game.worldX;
+    if(x<-80 || x>canvas.width+80) continue;
+    if(item.kind==="prime") drawPrime(x,LANES[item.lane],item.value);
+    else drawObstacle(x,LANES[item.lane]);
+  }
+}
+
+function drawPrime(x,y,value){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.beginPath();
+  ctx.arc(0,0,24,0,Math.PI*2);
+  ctx.fillStyle="rgba(245,158,11,.22)";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.roundRect(-21,-21,42,42,10);
+  ctx.fillStyle="#f59e0b";
+  ctx.fill();
+  ctx.lineWidth=2;
+  ctx.strokeStyle="#7c2d12";
+  ctx.stroke();
+  ctx.fillStyle="#111827";
+  ctx.font="900 21px system-ui";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText(value,0,1);
+  ctx.restore();
+}
+
+function drawObstacle(x,y){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.fillStyle="#ef4444";
+  ctx.beginPath();
+  ctx.moveTo(-22,20);
+  ctx.lineTo(-15,-20);
+  ctx.lineTo(15,-20);
+  ctx.lineTo(22,20);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle="#f8fafc";
+  ctx.fillRect(-12,-6,24,5);
+  ctx.fillRect(-14,5,28,5);
+  ctx.restore();
+}
+
+function drawCar(){
+  if(!game) return;
+
+  const y=game.playerY;
+  const x=game.playerX;
+  ctx.save();
+  ctx.translate(x,y); // Agora utiliza a variável de movimentação X
+
+  ctx.fillStyle="rgba(0,0,0,.24)";
+  ctx.beginPath();
+  ctx.ellipse(30,22,35,9,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#2563eb";
+  ctx.beginPath();
+  ctx.roundRect(0,-17,58,34,10);
+  ctx.fill();
+
+  ctx.fillStyle="#1d4ed8";
+  ctx.beginPath();
+  ctx.roundRect(16,-25,28,22,8);
+  ctx.fill();
+
+  ctx.fillStyle="#bfdbfe";
+  ctx.beginPath();
+  ctx.roundRect(22,-21,18,14,4);
+  ctx.fill();
+
+  ctx.fillStyle="#0f172a";
+  for(const wx of [10,48]){
+    ctx.beginPath();
+    ctx.arc(wx,17,8,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle="#94a3b8";
+    ctx.beginPath();
+    ctx.arc(wx,17,3,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle="#0f172a";
+  }
+
+  ctx.fillStyle="#fff";
+  ctx.font="800 12px system-ui";
+  ctx.textAlign="center";
+  ctx.fillText(game.current,30,3);
+  ctx.restore();
+}
+
+function loop(ts){
+  if(!lastTime) lastTime=ts;
+  const dt=Math.min((ts-lastTime)/1000,0.04);
+  lastTime=ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+startGame();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
