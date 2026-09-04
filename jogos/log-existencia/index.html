@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo: Condição de Existência de Logaritmos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        .math-display {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+        }
+        .math-base {
+            font-size: 0.65em;
+            vertical-align: sub;
+            margin-left: 2px;
+            margin-right: 2px;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-8 px-4 flex justify-center items-start">
+
+    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+        
+        <!-- Cabeçalho -->
+        <div class="bg-indigo-600 text-white text-center py-6 px-4">
+            <h1 class="text-3xl font-bold tracking-tight mb-2">JOGO: DOMÍNIO DO LOGARITMO</h1>
+            <p class="text-indigo-100 font-medium">Condição de Existência (CE)</p>
+        </div>
+
+        <div class="p-6 md:p-8">
+            
+            <!-- Seleção de Nível -->
+            <div class="flex justify-center gap-4 mb-8">
+                <button onclick="startGame(1)" id="btn-lvl-1" class="px-6 py-2 rounded-lg font-bold border-2 transition-all bg-indigo-100 border-indigo-600 text-indigo-700 shadow-sm">
+                    Nível 1 (1º Grau)
+                </button>
+                <button onclick="startGame(2)" id="btn-lvl-2" class="px-6 py-2 rounded-lg font-bold border-2 transition-all bg-slate-50 border-slate-300 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300">
+                    Nível 2 (2º Grau)
+                </button>
+            </div>
+
+            <!-- Área da Função -->
+            <div class="bg-slate-50 rounded-xl border border-slate-200 p-8 text-center mb-8 shadow-inner">
+                <p class="text-slate-500 font-semibold mb-4 uppercase text-sm tracking-widest">Analise a função</p>
+                <div id="function-display" class="text-4xl md:text-5xl math-display text-slate-800 font-bold">
+                    <!-- Gerado via JS -->
+                </div>
+            </div>
+
+            <!-- Construtor de Condições -->
+            <div class="mb-8">
+                <p class="text-slate-700 font-bold text-lg mb-4 text-center">Determine as condições de existência (para <span class="font-mono">x ∈ ℝ</span>):</p>
+                
+                <div class="bg-white border-2 border-indigo-100 rounded-xl p-6 shadow-sm">
+                    <div class="flex items-center gap-3 text-lg font-bold text-slate-600 mb-4 border-b pb-2">
+                        <span class="font-mono text-indigo-600">CE = { x ∈ ℝ | </span>
+                    </div>
+
+                    <!-- Lista de Condições -->
+                    <div id="conditions-list" class="flex flex-col gap-3 pl-4 md:pl-12">
+                        <!-- Gerado via JS -->
+                    </div>
+
+                    <div class="flex items-center gap-3 text-lg font-bold text-slate-600 mt-4 border-t pt-2">
+                        <span class="font-mono text-indigo-600">}</span>
+                    </div>
+
+                    <div class="mt-6 flex justify-center">
+                        <button onclick="addCondition()" class="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg font-semibold transition-all border border-indigo-200">
+                            <span class="text-xl leading-none">+</span> Adicionar condição
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback -->
+            <div id="feedback-alert" class="hidden mb-6 text-center py-4 px-6 rounded-xl font-bold text-lg border">
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="text-center flex justify-center gap-4">
+                <button onclick="verifyConditions()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xl font-bold py-3 px-12 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5">
+                    VERIFICAR
+                </button>
+                <button onclick="startGame(currentLevel)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-lg font-bold py-3 px-6 rounded-xl shadow-sm transition-all">
+                    NOVA FUNÇÃO
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentLevel = 1;
+        let baseFn = null; 
+        let logFn = null;  
+        let conditions = [];
+
+        // Inicialização
+        function startGame(level) {
+            currentLevel = level;
+            
+            // Atualizar botões visuais
+            document.getElementById('btn-lvl-1').className = level === 1 
+                ? "px-6 py-2 rounded-lg font-bold border-2 transition-all bg-indigo-100 border-indigo-600 text-indigo-700 shadow-sm"
+                : "px-6 py-2 rounded-lg font-bold border-2 transition-all bg-slate-50 border-slate-300 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300";
+            document.getElementById('btn-lvl-2').className = level === 2 
+                ? "px-6 py-2 rounded-lg font-bold border-2 transition-all bg-indigo-100 border-indigo-600 text-indigo-700 shadow-sm"
+                : "px-6 py-2 rounded-lg font-bold border-2 transition-all bg-slate-50 border-slate-300 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300";
+
+            generateValidFunction(level);
+            
+            conditions = [{ id: Date.now(), op: '>', val: '' }]; // Resetar condições com 1 vazia
+            hideFeedback();
+            renderConditions();
+        }
+
+        // Formatação Matemática
+        function formatLinear(a, b) {
+            let str = "";
+            if (a === 1) str += "x";
+            else if (a === -1) str += "-x";
+            else str += a + "x";
+
+            if (b > 0) str += " + " + b;
+            else if (b < 0) str += " - " + Math.abs(b);
+            
+            return str;
+        }
+
+        function formatQuadratic(a, b, c) {
+            let str = "";
+            if (a === 1) str += "x²";
+            else if (a === -1) str += "-x²";
+            else str += a + "x²";
+
+            if (b > 0) str += (b === 1 ? " + x" : " + " + b + "x");
+            else if (b < 0) str += (b === -1 ? " - x" : " - " + Math.abs(b) + "x");
+
+            if (c > 0) str += " + " + c;
+            else if (c < 0) str += " - " + Math.abs(c);
+            
+            return str || "0";
+        }
+
+        // Geração da Função
+        function generateValidFunction(level) {
+            let valid = false;
+            while (!valid) {
+                // Sorteia a base (Sempre 1º grau para manter foco e simplicidade de valores)
+                let a1 = [1, -1, 2, -2][Math.floor(Math.random() * 4)];
+                let b1 = Math.floor(Math.random() * 9) - 4; // -4 a 4
+                
+                let baseStr = formatLinear(a1, b1);
+                
+                // Precisa de parênteses se tiver mais de um termo
+                let baseDisplay = (b1 !== 0 || a1 < 0) ? `(${baseStr})` : baseStr;
+
+                let logStr = "";
+                let a2, b2, c2;
+
+                if (level === 1) {
+                    a2 = [1, -1, 2, -2, 4, -4][Math.floor(Math.random() * 6)];
+                    b2 = Math.floor(Math.random() * 11) - 5;
+                    logStr = formatLinear(a2, b2);
+                    
+                    baseFn = (x) => a1 * x + b1;
+                    logFn = (x) => a2 * x + b2;
+
+                } else {
+                    // 2º Grau: Fatoração a(x-r1)(x-r2) para garantir raízes agradáveis
+                    let r1 = Math.floor(Math.random() * 9) - 4;
+                    let r2 = Math.floor(Math.random() * 9) - 4;
+                    a2 = [1, -1][Math.floor(Math.random() * 2)];
+                    
+                    b2 = -a2 * (r1 + r2);
+                    c2 = a2 * r1 * r2;
+
+                    logStr = formatQuadratic(a2, b2, c2);
+                    
+                    baseFn = (x) => a1 * x + b1;
+                    logFn = (x) => a2 * x * x + b2 * x + c2;
+                }
+
+                // Verifica se existe algum x válido no domínio [-50, 50] para garantir que o exercício tem solução
+                valid = false;
+                for (let x = -50; x <= 50; x += 0.5) {
+                    if (baseFn(x) > 1e-6 && Math.abs(baseFn(x) - 1) > 1e-6 && logFn(x) > 1e-6) {
+                        valid = true;
+                        break;
+                    }
+                }
+
+                if (valid) {
+                    document.getElementById('function-display').innerHTML = `f(x) = log<span class="math-base">${baseDisplay}</span>(${logStr})`;
+                }
+            }
+        }
+
+        // Interface das Condições
+        function addCondition() {
+            conditions.push({ id: Date.now(), op: '>', val: '' });
+            renderConditions();
+        }
+
+        function removeCondition(id) {
+            conditions = conditions.filter(c => c.id !== id);
+            if (conditions.length === 0) addCondition(); // Mantém pelo menos 1
+            renderConditions();
+        }
+
+        function updateCondition(id, field, value) {
+            let cond = conditions.find(c => c.id === id);
+            if (cond) cond[field] = value;
+        }
+
+        function renderConditions() {
+            const container = document.getElementById('conditions-list');
+            container.innerHTML = '';
+
+            conditions.forEach((cond, index) => {
+                const row = document.createElement('div');
+                row.className = "flex items-center gap-3 animate-fade-in";
+                
+                row.innerHTML = `
+                    <span class="font-mono text-xl text-slate-700 font-bold">x</span>
+                    <select onchange="updateCondition(${cond.id}, 'op', this.value)" class="text-lg font-mono font-bold bg-slate-50 border-2 border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500 text-indigo-700 cursor-pointer">
+                        <option value=">" ${cond.op === '>' ? 'selected' : ''}>&gt;</option>
+                        <option value="<" ${cond.op === '<' ? 'selected' : ''}>&lt;</option>
+                        <option value=">=" ${cond.op === '>=' ? 'selected' : ''}>&ge;</option>
+                        <option value="<=" ${cond.op === '<=' ? 'selected' : ''}>&le;</option>
+                        <option value="!=" ${cond.op === '!=' ? 'selected' : ''}>&ne;</option>
+                        <option value="=" ${cond.op === '=' ? 'selected' : ''}>=</option>
+                    </select>
+                    <input type="number" step="any" onchange="updateCondition(${cond.id}, 'val', this.value)" value="${cond.val}" placeholder="..." class="w-24 text-lg font-bold text-center border-2 border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500 bg-white">
+                    ${index > 0 ? `<button onclick="removeCondition(${cond.id})" class="text-slate-400 hover:text-red-500 transition-colors ml-2" title="Remover"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>` : `<div class="w-8"></div>`}
+                `;
+                
+                if (index > 0) {
+                    const andSpan = document.createElement('span');
+                    andSpan.className = "font-bold text-slate-400 text-sm uppercase -mt-1 block";
+                    andSpan.innerText = "e";
+                    container.appendChild(andSpan);
+                }
+                
+                container.appendChild(row);
+            });
+        }
+
+        function hideFeedback() {
+            document.getElementById('feedback-alert').classList.add('hidden');
+        }
+
+        function showFeedback(isCorrect, message) {
+            const el = document.getElementById('feedback-alert');
+            el.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'border-red-200', 'bg-green-50', 'text-green-700', 'border-green-200');
+            
+            if (isCorrect) {
+                el.classList.add('bg-green-50', 'text-green-700', 'border-green-200');
+                el.innerHTML = `✅ <strong>Correto!</strong> ${message}`;
+            } else {
+                el.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+                el.innerHTML = `❌ <strong>Incorreto.</strong> ${message}`;
+            }
+        }
+
+        // Lógica de Verificação via Avaliação de Pontos Críticos
+        function evaluateStudentLogic(x) {
+            if (conditions.length === 0) return true;
+            for (let c of conditions) {
+                let val = parseFloat(c.val);
+                if (isNaN(val)) return false; // Trata vazio como falso
+
+                if (c.op === '>') { if (!(x > val)) return false; }
+                else if (c.op === '<') { if (!(x < val)) return false; }
+                else if (c.op === '>=') { if (!(x >= val)) return false; }
+                else if (c.op === '<=') { if (!(x <= val)) return false; }
+                else if (c.op === '=') { if (!(Math.abs(x - val) < 1e-6)) return false; }
+                else if (c.op === '!=') { if (!(Math.abs(x - val) > 1e-6)) return false; }
+            }
+            return true;
+        }
+
+        function verifyConditions() {
+            // Verifica campos vazios
+            if (conditions.some(c => c.val === '')) {
+                showFeedback(false, "Preencha todos os valores numéricos das condições.");
+                return;
+            }
+
+            // Geração de Pontos de Teste Abrangentes
+            let testPoints = new Set();
+            
+            // Sweep geral (inteiros e meios)
+            for (let x = -30; x <= 30; x += 0.5) testPoints.add(x);
+            
+            // Adicionando pontos críticos (se encontrarmos as raízes aproximadas varrendo o gráfico)
+            // Varredura fina para achar mudanças de sinal
+            for(let x = -20; x <= 20; x += 0.05) {
+                if (Math.abs(baseFn(x)) < 0.1 || Math.abs(baseFn(x) - 1) < 0.1 || Math.abs(logFn(x)) < 0.1) {
+                    testPoints.add(x);
+                    testPoints.add(x - 0.01);
+                    testPoints.add(x + 0.01);
+                }
+            }
+            
+            // Avaliação
+            let isPerfectMatch = true;
+            for (let pt of testPoints) {
+                // Matemática real da Condição de Existência
+                let actual = (baseFn(pt) > 1e-6) && (Math.abs(baseFn(pt) - 1) > 1e-6) && (logFn(pt) > 1e-6);
+                
+                // Matemática inserida pelo aluno
+                let student = evaluateStudentLogic(pt);
+                
+                if (actual !== student) {
+                    isPerfectMatch = false;
+                    break;
+                }
+            }
+
+            if (isPerfectMatch) {
+                showFeedback(true, "As condições que você determinou cobrem perfeitamente o domínio real da função!");
+            } else {
+                showFeedback(false, "Sua condição não corresponde ao domínio exato (lembre-se: Base > 0, Base ≠ 1, Logaritmando > 0). Reveja as restrições.");
+            }
+        }
+
+        // Iniciar
+        window.onload = () => startGame(1);
+
+    </script>
+    <style>
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</body>
+</html>
