@@ -39,6 +39,14 @@ const jogos = [
         tags: ["Fatoração", "Lógica", "Logaritimos"],
         link: "./jogos/pratica-logaritmos/index.html",
         imagem: "https://placehold.co/600x400/c0392b/ffffff?text=Logaritimos"
+    },
+    {
+        id: 6,
+        titulo: "Condição de Existência Logaritimos",
+        area: "Matemática",
+        tags: ["Funções", "Lógica", "Logaritimos"],
+        link: "./jogos/log-existencia/index.html",
+        imagem: "https://placehold.co/600x400/c0392b/ffffff?text=Log_Existencia"
     }
 ];
 
