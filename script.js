@@ -47,6 +47,22 @@ const jogos = [
         tags: ["Funções", "Lógica", "Logaritimos"],
         link: "./jogos/log-existencia/index.html",
         imagem: "https://placehold.co/600x400/c0392b/ffffff?text=Log_Existencia"
+    },
+    {
+        id: 7,
+        titulo: "Lançamento Oblíquo",
+        area: "Física",
+        tags: ["Funções", "Vetores", "MRUV"],
+        link: "./jogos/lancamento-obliquo/index.html",
+        imagem: "./assets/lancamento-obliquo.png"
+    },
+    {
+        id: 8,
+        titulo: "Problemas com Lançamento Oblíquo",
+        area: "Física",
+        tags: ["Funções", "Vetores", "MRUV"],
+        link: "./jogos/problemas-lancamento/index.html",
+        imagem: "./assets/problemas-lancamento.png"
     }
 ];
 
