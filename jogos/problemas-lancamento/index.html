@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Problemas de Lançamento Oblíquo</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #111827;
+    --panel2: #1f2937;
+    --text: #f8fafc;
+    --muted: #cbd5e1;
+    --accent: #f59e0b; 
+    --accent-hover: #d97706;
+    --good: #22c55e;
+    --bad: #ef4444;
+    --border: #334155;
+    --enem-bg: #f8fafc;
+    --enem-text: #1e293b;
+  }
+
+  * { box-sizing: border-box; }
+  
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: linear-gradient(180deg, #0f172a, #111827);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .app {
+    width: min(800px, 100%);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 24px;
+    font-size: 1rem;
+    transition: color 0.2s;
+  }
+  .home-link:hover { color: #fff; }
+
+  header { text-align: center; margin-bottom: 24px; }
+  h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.5rem); color: var(--accent); }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin: 8px 0; }
+
+  .hud {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px;
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  .label { color: #94a3b8; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .value { font-weight: 800; font-size: 1.5rem; }
+  .value.score { color: var(--accent); }
+  .value.good { color: var(--good); }
+  .value.bad { color: var(--bad); }
+
+  .game-panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  }
+
+  .enem-card {
+    background: var(--enem-bg); color: var(--enem-text); border-radius: 12px;
+    padding: 24px; margin-bottom: 24px; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    border-left: 6px solid var(--accent);
+  }
+
+  .question-text {
+    font-size: 1.15rem; line-height: 1.6; margin-bottom: 16px;
+  }
+
+  .data-box {
+    background: #e2e8f0; border: 1px dashed #94a3b8; border-radius: 8px; padding: 12px;
+    font-family: monospace; font-size: 1rem; color: #334155;
+  }
+
+  .input-group {
+    display: flex; gap: 12px; align-items: center; margin-bottom: 20px;
+  }
+  
+  input[type="number"] {
+    flex: 1; background: var(--panel2); border: 2px solid var(--border); color: var(--text);
+    padding: 14px; border-radius: 10px; outline: none; font-weight: bold; font-size: 1.2rem; transition: 0.2s;
+  }
+  input[type="number"]:focus { border-color: var(--accent); }
+  
+  .unit { font-size: 1.2rem; font-weight: bold; color: var(--muted); min-width: 40px; }
+
+  .btn-submit {
+    background: var(--accent); color: #fff; border: 0; padding: 14px 28px;
+    border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: 0.2s;
+  }
+  .btn-submit:hover { background: var(--accent-hover); }
+
+  .feedback {
+    border-radius: 10px; padding: 20px; font-size: 1.05rem; line-height: 1.6; display: none; margin-top: 10px;
+  }
+  .feedback.show { display: block; animation: fadeIn 0.3s ease; }
+  .feedback.success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); }
+  .feedback.error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
+  
+  .feedback h3 { margin: 0 0 12px 0; font-size: 1.25rem; }
+  .feedback.success h3 { color: var(--good); }
+  .feedback.error h3 { color: var(--bad); }
+  
+  .step-box {
+    background: #0f172a; border-radius: 8px; padding: 12px 16px; font-family: monospace;
+    margin-top: 12px; border: 1px solid var(--border); color: #cbd5e1;
+  }
+  .step-box strong { color: var(--accent); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 600px) {
+    .hud { grid-template-columns: 1fr; gap: 8px; }
+    .input-group { flex-direction: column; align-items: stretch; }
+    .unit { text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <a href="../../index.html" class="home-link"><span>←</span> Voltar para Home</a>
+
+  <header>
+    <h1>Física: Lançamento Oblíquo</h1>
+    <div class="subtitle">Pratique a teoria resolvendo problemas gerados dinamicamente.</div>
+  </header>
+
+  <section class="hud">
+    <div class="card"><div class="label">Pontuação</div><div class="value score" id="ui-score">0</div></div>
+    <div class="card"><div class="label">Acertos</div><div class="value good" id="ui-hits">0</div></div>
+    <div class="card"><div class="label">Erros</div><div class="value bad" id="ui-misses">0</div></div>
+  </section>
+
+  <main class="game-panel">
+    
+    <div class="enem-card">
+      <div class="question-text" id="q-text">Gerando problema...</div>
+      <div class="data-box" id="q-data"></div>
+    </div>
+
+    <div class="input-group">
+      <input type="number" id="answer-input" step="0.01" placeholder="Digite sua resposta..." autocomplete="off">
+      <span class="unit" id="q-unit">m</span>
+      <button class="btn-submit" id="btn-submit">Responder</button>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+  </main>
+</div>
+
+<script>
+"use strict";
+
+const UI = {
+  score: document.getElementById("ui-score"),
+  hits: document.getElementById("ui-hits"),
+  misses: document.getElementById("ui-misses"),
+  qText: document.getElementById("q-text"),
+  qData: document.getElementById("q-data"),
+  qUnit: document.getElementById("q-unit"),
+  input: document.getElementById("answer-input"),
+  btn: document.getElementById("btn-submit"),
+  feedback: document.getElementById("feedback")
+};
+
+let score = 0, hits = 0, misses = 0;
+let currentAnswer = 0;
+let currentExplanation = "";
+let gameState = "waiting"; 
+
+// Histórico de problemas para evitar repetição (Memória de 5 turnos)
+let historyTemplates = []; 
+const HISTORY_LIMIT = 5;
+
+// Dados Trigonométricos Fixos
+const TRIG = {
+  30: { sin: 0.50, cos: 0.87 },
+  45: { sin: 0.71, cos: 0.71 },
+  60: { sin: 0.87, cos: 0.50 },
+  37: { sin: 0.60, cos: 0.80 },
+  53: { sin: 0.80, cos: 0.60 }
+};
+const GRAVITY = 10;
+
+function randomInt(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// ==========================================
+// BANCO DE GERADORES DE PROBLEMAS (10 TIPOS)
+// ==========================================
+
+const templates = [
+  // 0. Encontrar Alcance
+  function() {
+    let v0 = randomInt([10, 15, 20, 25, 30, 40]);
+    let angle = randomInt([30, 45, 60, 37, 53]);
+    let sin = TRIG[angle].sin;
+    let cos = TRIG[angle].cos;
+    
+    let v0x = v0 * cos;
+    let v0y = v0 * sin;
+    let t = (2 * v0y) / GRAVITY;
+    let A = v0x * t;
+
+    return {
+      text: `Em uma partida de futebol, um jogador cobra uma falta chutando a bola com uma velocidade inicial de <strong>${v0} m/s</strong>, formando um ângulo de <strong>${angle}&deg;</strong> com a horizontal. Desprezando a resistência do ar, qual é a distância horizontal (alcance) que a bola atinge ao retornar ao solo?`,
+      data: `Dados: sen(${angle}&deg;) = ${sin.toFixed(2)}; cos(${angle}&deg;) = ${cos.toFixed(2)}; g = 10 m/s&sup2;`,
+      unit: "m",
+      answer: A,
+      explanation: `1) V<sub>0x</sub> = ${v0} &times; ${cos.toFixed(2)} = <strong>${v0x.toFixed(2)} m/s</strong><br>
+                    2) V<sub>0y</sub> = ${v0} &times; ${sin.toFixed(2)} = <strong>${v0y.toFixed(2)} m/s</strong><br>
+                    3) Tempo de voo (t) = 2 &times; ${v0y.toFixed(2)} / 10 = <strong>${t.toFixed(2)} s</strong><br>
+                    4) Alcance = V<sub>0x</sub> &times; t = ${v0x.toFixed(2)} &times; ${t.toFixed(2)} = <strong>${A.toFixed(2)} m</strong>`
+    };
+  },
+
+  // 1. Encontrar Altura Máxima
+  function() {
+    let v0 = randomInt([20, 30, 40, 50, 60]);
+    let angle = randomInt([30, 45, 60, 37, 53]);
+    let sin = TRIG[angle].sin;
+    
+    let v0y = v0 * sin;
+    let H = Math.pow(v0y, 2) / (2 * GRAVITY);
+
+    return {
+      text: `Um foguete de garrafa PET é lançado durante uma feira de ciências com velocidade inicial de <strong>${v0} m/s</strong> sob um ângulo de elevação de <strong>${angle}&deg;</strong>. Qual é a altura máxima atingida pelo foguete em relação ao ponto de lançamento?`,
+      data: `Dados: sen(${angle}&deg;) = ${sin.toFixed(2)}; g = 10 m/s&sup2;`,
+      unit: "m",
+      answer: H,
+      explanation: `1) A altura máxima depende apenas da componente vertical.<br>
+                    2) V<sub>0y</sub> = V<sub>0</sub> &times; sen(&theta;) = ${v0} &times; ${sin.toFixed(2)} = <strong>${v0y.toFixed(2)} m/s</strong><br>
+                    3) H<sub>max</sub> = V<sub>0y</sub>&sup2; / 2g = (${v0y.toFixed(2)})&sup2; / 20 = <strong>${H.toFixed(2)} m</strong>`
+    };
+  },
+
+  // 2. Encontrar Tempo de Voo
+  function() {
+    let v0 = randomInt([15, 20, 25, 30, 35]);
+    let angle = randomInt([30, 37, 45, 53, 60]);
+    let sin = TRIG[angle].sin;
+    
+    let v0y = v0 * sin;
+    let t = (2 * v0y) / GRAVITY;
+
+    return {
+      text: `Um atleta de salto em distância (modelado como um projétil) deixa o solo com uma velocidade de <strong>${v0} m/s</strong> formando um ângulo de <strong>${angle}&deg;</strong>. Quanto tempo ele permanece no ar antes de tocar a caixa de areia?`,
+      data: `Dados: sen(${angle}&deg;) = ${sin.toFixed(2)}; g = 10 m/s&sup2;`,
+      unit: "s",
+      answer: t,
+      explanation: `1) V<sub>0y</sub> = ${v0} &times; ${sin.toFixed(2)} = <strong>${v0y.toFixed(2)} m/s</strong><br>
+                    2) O tempo de subida é t<sub>subida</sub> = V<sub>0y</sub> / g = ${v0y.toFixed(2)} / 10 = ${(v0y/10).toFixed(2)} s.<br>
+                    3) O tempo total de voo é o dobro do tempo de subida: t = <strong>${t.toFixed(2)} s</strong>`
+    };
+  },
+
+  // 3. Encontrar Vx através do Alcance e Tempo
+  function() {
+    let t = randomInt([2, 3, 4, 5]);
+    let A = randomInt([30, 45, 60, 80, 100, 120]);
+    let vx = A / t;
+
+    return {
+      text: `Uma bola de golfe é tacada e realiza uma trajetória parabólica. Ela permanece no ar por exatamente <strong>${t} segundos</strong> e atinge um alcance horizontal de <strong>${A} metros</strong>. Qual foi a velocidade inicial horizontal (V<sub>x</sub>) impressa à bola?`,
+      data: `Dados: Considere o movimento horizontal como uniforme.`,
+      unit: "m/s",
+      answer: vx,
+      explanation: `1) No lançamento oblíquo, o movimento no eixo X é Uniforme (MU).<br>
+                    2) A equação do alcance é: Alcance = V<sub>x</sub> &times; tempo total.<br>
+                    3) V<sub>x</sub> = ${A} / ${t} = <strong>${vx.toFixed(2)} m/s</strong>`
+    };
+  },
+
+  // 4. Encontrar V0y através da Altura
+  function() {
+    let H = randomInt([5, 11.25, 20, 31.25, 45]); 
+    // Raízes exatas para g=10: sqrt(20*5)=10, sqrt(20*11.25)=15, sqrt(20*20)=20...
+    let v0y = Math.sqrt(2 * GRAVITY * H);
+
+    return {
+      text: `Um projétil é lançado obliquamente e o radar militar registra que ele atingiu uma altura máxima exata de <strong>${H} metros</strong>. Qual foi o módulo da velocidade vertical inicial (V<sub>0y</sub>) do lançamento?`,
+      data: `Dados: g = 10 m/s&sup2;`,
+      unit: "m/s",
+      answer: v0y,
+      explanation: `1) Usando a equação de Torricelli no eixo Y ou a fórmula da altura máxima: H = V<sub>0y</sub>&sup2; / 2g.<br>
+                    2) ${H} = V<sub>0y</sub>&sup2; / 20<br>
+                    3) V<sub>0y</sub> = &radic;(${H} &times; 20) = &radic;${H * 20} = <strong>${v0y.toFixed(2)} m/s</strong>`
+    };
+  },
+
+  // 5. Encontrar V0 por Pitágoras
+  function() {
+    let pairs = [[30, 40, 50], [15, 20, 25], [6, 8, 10], [12, 16, 20], [9, 12, 15]];
+    let p = randomInt(pairs);
+    let v0x = p[0]; let v0y = p[1]; let v0 = p[2];
+
+    return {
+      text: `Um sistema de catapulta lança uma rocha. A telemetria indica que, no instante do lançamento, a rocha possuía uma velocidade horizontal de <strong>${v0x} m/s</strong> e uma velocidade vertical de <strong>${v0y} m/s</strong>. Qual a velocidade inicial total (V<sub>0</sub>) da rocha?`,
+      data: `Dados: V&sup2; = V<sub>x</sub>&sup2; + V<sub>y</sub>&sup2;`,
+      unit: "m/s",
+      answer: v0,
+      explanation: `1) A velocidade inicial total é o vetor resultante das componentes X e Y.<br>
+                    2) V<sub>0</sub>&sup2; = ${v0x}&sup2; + ${v0y}&sup2; = ${v0x*v0x} + ${v0y*v0y} = ${v0x*v0x + v0y*v0y}<br>
+                    3) V<sub>0</sub> = &radic;${v0x*v0x + v0y*v0y} = <strong>${v0.toFixed(2)} m/s</strong>`
+    };
+  },
+
+  // 6. Velocidade no ponto mais alto
+  function() {
+    let v0 = randomInt([10, 20, 30, 40]);
+    let angle = randomInt([30, 45, 60, 37, 53]);
+    let cos = TRIG[angle].cos;
+    
+    let v_topo = v0 * cos; // No topo, Vy = 0. Sobra apenas Vx.
+
+    return {
+      text: `Uma flecha é disparada com velocidade de <strong>${v0} m/s</strong> e ângulo de <strong>${angle}&deg;</strong> em relação ao solo. Qual é o módulo da velocidade escalar da flecha no exato instante em que ela atinge sua altura máxima?`,
+      data: `Dados: cos(${angle}&deg;) = ${cos.toFixed(2)}; sen(${angle}&deg;) = ${TRIG[angle].sin.toFixed(2)}`,
+      unit: "m/s",
+      answer: v_topo,
+      explanation: `1) No ponto de altura máxima, a componente vertical da velocidade é nula (V<sub>y</sub> = 0).<br>
+                    2) Portanto, o projétil se move apenas horizontalmente com velocidade constante V<sub>x</sub>.<br>
+                    3) V<sub>topo</sub> = V<sub>x</sub> = ${v0} &times; ${cos.toFixed(2)} = <strong>${v_topo.toFixed(2)} m/s</strong>`
+    };
+  },
+
+  // 7. Altura em um instante T
+  function() {
+    let t_req = randomInt([1, 2, 3]);
+    let v0y = randomInt([35, 40, 45, 50]); // Garante que não caiu ainda
+    let y = (v0y * t_req) - (5 * t_req * t_req);
+
+    return {
+      text: `Durante uma missão de suprimentos, um pacote é lançado do solo por um dispositivo com uma velocidade inicial vertical de <strong>${v0y} m/s</strong> (já decomposta). Após exatamente <strong>${t_req} segundos</strong> de voo, qual é a altura do pacote em relação ao solo?`,
+      data: `Dados: Equação horária Y = V<sub>0y</sub>·t - (g·t&sup2;)/2; g = 10 m/s&sup2;`,
+      unit: "m",
+      answer: y,
+      explanation: `1) Substituindo os valores na equação da posição vertical:<br>
+                    2) Y = (${v0y} &times; ${t_req}) - (10 &times; ${t_req}&sup2;) / 2<br>
+                    3) Y = ${v0y * t_req} - 5 &times; ${t_req * t_req} = <strong>${y.toFixed(2)} m</strong>`
+    };
+  },
+
+  // 8. Encontrar V0 a partir do tempo de voo e ângulo
+  function() {
+    let t = randomInt([2, 3, 4, 6]);
+    // Escolhendo ângulos com senos "amigáveis" para não dar dizima no v0
+    let angle = randomInt([30, 37, 53]); 
+    let sin = TRIG[angle].sin; // 0.5, 0.6 ou 0.8
+    
+    // t = 2*v0*sin/g => v0 = 10*t / (2*sin)
+    let v0 = (GRAVITY * t) / (2 * sin);
+
+    return {
+      text: `Um motociclista radical salta uma rampa inclinada a <strong>${angle}&deg;</strong>. Para que o show seja perfeito, ele precisa permanecer no ar por exatos <strong>${t} segundos</strong>. Qual deve ser a velocidade inicial (V<sub>0</sub>) da moto ao sair da rampa?`,
+      data: `Dados: sen(${angle}&deg;) = ${sin.toFixed(2)}; g = 10 m/s&sup2;`,
+      unit: "m/s",
+      answer: v0,
+      explanation: `1) A fórmula do tempo de voo é: t = 2 &times; V<sub>0</sub> &times; sen(&theta;) / g<br>
+                    2) Isolando V<sub>0</sub>: V<sub>0</sub> = (t &times; g) / (2 &times; sen(&theta;))<br>
+                    3) V<sub>0</sub> = (${t} &times; 10) / (2 &times; ${sin.toFixed(2)}) = ${t*10} / ${(2*sin).toFixed(2)} = <strong>${v0.toFixed(2)} m/s</strong>`
+    };
+  },
+
+  // 9. Vy no impacto (Simetria)
+  function() {
+    let v0 = randomInt([12, 18, 24, 32]);
+    let angle = randomInt([30, 45, 60, 37, 53]);
+    let sin = TRIG[angle].sin;
+    
+    let vy_final = v0 * sin; // Módulo da vel vertical final é igual à inicial
+
+    return {
+      text: `Uma mangueira de bombeiros jorra água com velocidade inicial de <strong>${v0} m/s</strong> a um ângulo de <strong>${angle}&deg;</strong>. Sabendo que a água atinge o solo completando a parábola simétrica, qual é o <strong>módulo</strong> da componente vertical da velocidade (V<sub>y</sub>) no exato instante em que a água toca o solo?`,
+      data: `Dados: sen(${angle}&deg;) = ${sin.toFixed(2)}; g = 10 m/s&sup2;`,
+      unit: "m/s",
+      answer: vy_final,
+      explanation: `1) Por simetria do movimento parabólico no mesmo nível, o módulo da velocidade vertical de impacto é igual ao da velocidade vertical de lançamento.<br>
+                    2) |V<sub>y final</sub>| = V<sub>0y</sub> = V<sub>0</sub> &times; sen(&theta;)<br>
+                    3) V<sub>0y</sub> = ${v0} &times; ${sin.toFixed(2)} = <strong>${vy_final.toFixed(2)} m/s</strong>`
+    };
+  }
+];
+
+function generateProblem() {
+  // Garante que o template sorteado não esteja nos últimos 5.
+  let idx;
+  let attempts = 0;
+  do {
+    idx = Math.floor(Math.random() * templates.length);
+    attempts++;
+  } while (historyTemplates.includes(idx) && attempts < 50);
+
+  // Atualiza histórico
+  historyTemplates.push(idx);
+  if (historyTemplates.length > HISTORY_LIMIT) {
+    historyTemplates.shift();
+  }
+
+  // Executa gerador
+  const pData = templates[idx]();
+  currentAnswer = pData.answer;
+  currentExplanation = pData.explanation;
+  
+  // Atualiza UI
+  UI.qText.innerHTML = pData.text;
+  UI.qData.innerHTML = pData.data;
+  UI.qUnit.innerHTML = pData.unit;
+  UI.input.value = "";
+  UI.input.disabled = false;
+  UI.input.focus();
+  
+  UI.btn.textContent = "Responder";
+  UI.feedback.className = "feedback";
+  UI.feedback.innerHTML = "";
+  
+  gameState = "waiting";
+}
+
+function checkAnswer() {
+  if (gameState === "waiting") {
+    const userVal = parseFloat(UI.input.value.replace(",", "."));
+    
+    if (isNaN(userVal)) {
+      alert("Por favor, insira um valor numérico válido.");
+      UI.input.focus();
+      return;
+    }
+
+    UI.input.disabled = true;
+    gameState = "feedback";
+
+    // Tolerância de erro de 0.15 para cobrir arredondamentos
+    const diff = Math.abs(userVal - currentAnswer);
+    const isCorrect = diff <= 0.15;
+
+    if (isCorrect) {
+      score += 100;
+      hits++;
+      UI.feedback.className = "feedback show success";
+      UI.feedback.innerHTML = `
+        <h3>✓ Resposta Exata!</h3>
+        O valor correto é <strong>${currentAnswer.toFixed(2)}</strong>.
+        <div class="step-box">${currentExplanation}</div>
+      `;
+    } else {
+      score = Math.max(0, score - 20);
+      misses++;
+      UI.feedback.className = "feedback show error";
+      UI.feedback.innerHTML = `
+        <h3>✗ Resposta Incorreta</h3>
+        O valor correto seria <strong>${currentAnswer.toFixed(2)}</strong> (Sua resposta: ${userVal}).
+        <div class="step-box">${currentExplanation}</div>
+      `;
+    }
+
+    // Atualiza Placar
+    UI.score.textContent = score;
+    UI.hits.textContent = hits;
+    UI.misses.textContent = misses;
+
+    UI.btn.textContent = "Próximo Desafio ➔";
+    UI.btn.focus();
+    
+  } else if (gameState === "feedback") {
+    generateProblem();
+  }
+}
+
+// Event Listeners
+UI.btn.addEventListener("click", checkAnswer);
+UI.input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") checkAnswer();
+});
+
+// Inicialização
+generateProblem();
+</script>
+</body>
+</html>

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Lançamento Oblíquo</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #111827;
+    --panel2: #1f2937;
+    --text: #f8fafc;
+    --muted: #cbd5e1;
+    --accent: #f97316; 
+    --accent-hover: #ea580c;
+    --good: #22c55e;
+    --bad: #ef4444;
+    --border: #334155;
+    --grid: #1e293b;
+    --ghost: rgba(249, 115, 22, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+  
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: linear-gradient(180deg, #0f172a, #111827);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .app {
+    width: min(1100px, 100%);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 16px;
+    font-size: 1rem;
+    transition: color 0.2s;
+    align-self: flex-start;
+  }
+  .home-link:hover { color: #fff; }
+
+  header { text-align: center; margin-bottom: 24px; }
+  h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.5rem); color: var(--accent); }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin: 8px 0; }
+
+  .diff-controls {
+    display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 12px;
+  }
+  .diff-controls select {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    padding: 8px 16px; border-radius: 8px; font-weight: 600; outline: none; cursor: pointer; font-size: 1rem;
+  }
+  .diff-controls select:focus { border-color: var(--accent); }
+
+  .hud {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px;
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  .label { color: #94a3b8; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .value { font-weight: 800; font-size: 1.5rem; }
+  .value.score { color: var(--accent); }
+  .value.target { color: #38bdf8; }
+
+  .game-layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+
+  .panel-box {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  }
+
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600; color: var(--muted); }
+  .form-group .val-display { color: var(--accent); font-weight: bold; }
+  .math-var { white-space: nowrap; }
+  .math-var sub {
+    font-size: 0.62em;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+    bottom: -0.22em;
+  }
+  .fixed-value {
+    display: inline-block;
+    margin-top: 5px;
+    line-height: 1.05;
+  }
+  .mode2-fixed label {
+    display: block;
+  }
+  .mode2-fixed .val-display {
+    display: block;
+    text-align: right;
+    margin-top: 6px;
+    font-size: 1.05rem;
+  }
+  .mode2-fixed .fixed-tag {
+    display: inline;
+    margin-left: 5px;
+    font-size: 0.8em;
+  }
+  .answer-tag { color: #38bdf8; font-size: .8em; margin-left: 5px; }
+
+  .fixed-value .fixed-tag {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.72em;
+    font-weight: 600;
+    margin-top: 3px;
+  }
+  
+  input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+
+  input[type="number"] {
+    width: 100%; background: var(--panel2); border: 2px solid var(--border); color: var(--text);
+    padding: 12px; border-radius: 8px; outline: none; font-weight: bold; font-size: 1.2rem; text-align: center; transition: 0.2s;
+  }
+  input[type="number"]:focus { border-color: var(--accent); }
+
+  .btn-submit {
+    width: 100%; background: var(--accent); color: #fff; border: 0; padding: 14px;
+    border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 10px; transition: 0.2s;
+  }
+  .btn-submit:hover { background: var(--accent-hover); }
+  .btn-submit:disabled { background: #475569; cursor: not-allowed; }
+
+  .canvas-container { display: flex; align-items: center; flex-direction: column; width: 100%; }
+  canvas {
+    background: #020617; border: 2px solid var(--border); border-radius: 12px;
+    max-width: 100%; height: auto; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+  }
+
+  .feedback {
+    margin-top: 20px; border-radius: 8px; padding: 16px; font-size: 1rem; line-height: 1.5; display: none; width: 100%;
+    background: var(--panel2); border: 1px solid var(--border);
+  }
+  .feedback.show { display: block; animation: fadeIn 0.3s ease; }
+  .feedback h3 { margin: 0 0 12px 0; font-size: 1.2rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .math-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .math-box { background: #0f172a; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.95rem; }
+  .math-box span { color: var(--accent); font-weight: bold; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 900px) {
+    .game-layout { grid-template-columns: 1fr; }
+    .hud { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <a href="../../index.html" class="home-link"><span>←</span> Voltar para Home</a>
+
+  <header>
+    <h1>Laboratório de Lançamento Oblíquo</h1>
+    <div class="subtitle">Analise a física, ajuste os vetores e acerte o alvo!</div>
+    <div class="diff-controls">
+      <label for="game-mode">Modo de Jogo:</label>
+      <select id="game-mode">
+        <option value="1">Modo 1: Descubra a Força e o Ângulo</option>
+        <option value="2">Modo 2: Estime o Alcance (Distância X)</option>
+      </select>
+    </div>
+  </header>
+
+  <section class="hud">
+    <div class="card"><div class="label">Pontuação</div><div class="value score" id="ui-score">0</div></div>
+    <div class="card"><div class="label">Alvo (Distância)</div><div class="value target" id="ui-target">0 m</div></div>
+    <div class="card"><div class="label">V. Inicial (x)</div><div class="value" id="ui-vx">0 m/s</div></div>
+    <div class="card"><div class="label">V. Inicial (y)</div><div class="value" id="ui-vy">0 m/s</div></div>
+  </section>
+
+  <main class="game-layout">
+    <!-- Painel de Controles -->
+    <div class="panel-box">
+      <div id="controls-sliders">
+        <div class="form-group" id="group-vel">
+          <label>Velocidade Inicial (<span class="math-var">V<sub>0</sub></span>) <span class="val-display" id="val-vel">40 m/s</span></label>
+          <input type="range" id="input-vel" min="10" max="100" value="40" step="1">
+        </div>
+
+        <div class="form-group" id="group-angle">
+          <label>Ângulo de Lançamento (<span class="math-var">&theta;</span>) <span class="val-display" id="val-angle">45&deg;</span></label>
+          <input type="range" id="input-angle" min="0" max="90" value="45" step="1">
+        </div>
+      </div>
+
+      <div class="form-group" id="controls-guess" style="display: none; background: rgba(56, 189, 248, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.3);">
+        <label style="color: #38bdf8;">Sua Estimativa de Alcance (m):</label>
+        <input type="number" id="input-guess" placeholder="Ex: 250">
+      </div>
+
+      <div class="form-group" style="background: var(--panel2); padding: 12px; border-radius: 8px;">
+        <label style="margin-bottom: 0;">Gravidade (g) <span style="color: #cbd5e1;">9.8 m/s&sup2;</span></label>
+      </div>
+
+      <button class="btn-submit" id="btn-fire">Lançar Projétil 🚀</button>
+      <button class="btn-submit" id="btn-show-answer" style="display: none; background: #64748b;">Mostrar Resposta 👁</button>
+      <button class="btn-submit" id="btn-next" style="display: none; background: #3b82f6;">Novo Desafio ➔</button>
+    </div>
+
+    <!-- Painel do Canvas e Física -->
+    <div class="canvas-container panel-box">
+      <canvas id="sim-canvas" width="700" height="400"></canvas>
+      
+      <div class="feedback" id="feedback">
+        <h3 id="feedback-title">Análise do Lançamento</h3>
+        <div class="math-grid">
+          <div class="math-box" id="calc-v0x">
+            <strong>1. Componente horizontal</strong><br>
+            V<sub>0x</sub> = V<sub>0</sub> · cos(θ)<br>
+            V<sub>0x</sub> = <span id="res-v0x">0</span> m/s
+          </div>
+          <div class="math-box" id="calc-v0y">
+            <strong>2. Componente vertical</strong><br>
+            V<sub>0y</sub> = V<sub>0</sub> · sen(θ)<br>
+            V<sub>0y</sub> = <span id="res-v0y">0</span> m/s
+          </div>
+          <div class="math-box" id="calc-t">
+            <strong>3. Tempo total de voo</strong><br>
+            t = 2 · V<sub>0y</sub> / g<br>
+            t = <span id="res-t">0</span> s
+          </div>
+          <div class="math-box" id="calc-r">
+            <strong>4. Alcance horizontal</strong><br>
+            A = V<sub>0x</sub> · t<br>
+            A = <span id="res-r">0</span> m
+          </div>
+          <div class="math-box" id="calc-h" style="grid-column: 1 / -1; text-align: center;">
+            <strong>5. Altura máxima</strong><br>
+            H = V<sub>0y</sub><sup>2</sup> / (2g)<br>
+            H = <span id="res-h">0</span> m
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+"use strict";
+
+const canvas = document.getElementById("sim-canvas");
+const ctx = canvas.getContext("2d");
+
+const ui = {
+  mode: document.getElementById("game-mode"),
+  score: document.getElementById("ui-score"),
+  target: document.getElementById("ui-target"),
+  vx: document.getElementById("ui-vx"),
+  vy: document.getElementById("ui-vy"),
+  slidersDiv: document.getElementById("controls-sliders"),
+  guessDiv: document.getElementById("controls-guess"),
+  vel: document.getElementById("input-vel"),
+  angle: document.getElementById("input-angle"),
+  guess: document.getElementById("input-guess"),
+  valVel: document.getElementById("val-vel"),
+  valAngle: document.getElementById("val-angle"),
+  groupVel: document.getElementById("group-vel"),
+  groupAngle: document.getElementById("group-angle"),
+  btnFire: document.getElementById("btn-fire"),
+  btnShowAnswer: document.getElementById("btn-show-answer"),
+  btnNext: document.getElementById("btn-next"),
+  feedback: document.getElementById("feedback"),
+  mathGrid: document.querySelector(".math-grid"),
+  fTitle: document.getElementById("feedback-title"),
+  resV0x: document.getElementById("res-v0x"),
+  resV0y: document.getElementById("res-v0y"),
+  resT: document.getElementById("res-t"),
+  resR: document.getElementById("res-r"),
+  resH: document.getElementById("res-h"),
+  calcV0x: document.getElementById("calc-v0x"),
+  calcV0y: document.getElementById("calc-v0y"),
+  calcT: document.getElementById("calc-t"),
+  calcR: document.getElementById("calc-r"),
+  calcH: document.getElementById("calc-h")
+};
+
+let score = 0;
+let targetDistance = 0;
+const gravity = 9.8;
+const groundY = canvas.height - 30;
+const originX = 30;
+let pixelsPerMeter = 1;
+
+let animationId = null;
+let projectile = null;
+let currentTrail = [];
+let pastAttempts = []; // Armazena histórico de chutes
+let attemptCount = 0;
+
+ui.vel.addEventListener("input", () => {
+  ui.valVel.innerHTML = ui.mode.value === "2"
+    ? `${ui.vel.value} m/s<span class="fixed-tag">Fixo</span>`
+    : `${ui.vel.value} m/s`;
+});
+ui.angle.addEventListener("input", () => {
+  ui.valAngle.innerHTML = ui.mode.value === "2"
+    ? `${ui.angle.value}&deg;<span class="fixed-tag">Fixo</span>`
+    : `${ui.angle.value}&deg;`;
+});
+ui.mode.addEventListener("change", initRound);
+
+function updateMode2Layout() {
+  const fixed = ui.mode.value === "2";
+  ui.groupVel.classList.toggle("mode2-fixed", fixed);
+  ui.groupAngle.classList.toggle("mode2-fixed", fixed);
+}
+
+function initRound() {
+  updateMode2Layout();
+  pastAttempts = [];
+  attemptCount = 0;
+  
+  if (ui.mode.value === "1") {
+    // Modo 1: Achar Força e Ângulo
+    ui.vel.disabled = false;
+    ui.angle.disabled = false;
+    ui.guessDiv.style.display = "none";
+    
+    targetDistance = Math.floor(Math.random() * 850) + 50;
+    ui.target.textContent = `${targetDistance} m`;
+  } else {
+    // Modo 2: Achar Distância (Alcance)
+    ui.vel.disabled = true;
+    ui.angle.disabled = true;
+    ui.guessDiv.style.display = "block";
+    ui.guess.value = "";
+    
+    ui.vel.value = Math.floor(Math.random() * 60) + 30;
+    ui.angle.value = Math.floor(Math.random() * 60) + 15;
+    ui.valVel.innerHTML = `${ui.vel.value} m/s<span class="fixed-tag">Fixo</span>`;
+    ui.valAngle.innerHTML = `${ui.angle.value}&deg;<span class="fixed-tag">Fixo</span>`;
+    
+    targetDistance = 0;
+    ui.target.textContent = `Estimativa`;
+  }
+  
+  pixelsPerMeter = (canvas.width - 60) / 1000; // Escala inicial padrão (1000m)
+  
+  if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+  projectile = null;
+  currentTrail = [];
+  ui.feedback.classList.remove("show");
+  ui.mathGrid.style.display = "none";
+  ui.btnFire.style.display = "block";
+  ui.btnFire.disabled = false;
+  ui.btnNext.style.display = "none";
+  ui.btnShowAnswer.style.display = "block";
+  ui.vx.textContent = "0 m/s";
+  ui.vy.textContent = "0 m/s";
+
+  drawScene();
+}
+
+function fire() {
+  if (ui.mode.value === "2" && ui.guess.value === "") {
+    alert("Insira sua estimativa de alcance antes de lançar!");
+    return;
+  }
+
+  ui.btnFire.disabled = true;
+  ui.feedback.classList.remove("show");
+
+  // O histórico de lançamentos é usado apenas no Modo 1.
+  if (ui.mode.value === "1" && currentTrail.length > 0) {
+    pastAttempts.push({ trail: currentTrail, number: attemptCount });
+  }
+
+  attemptCount++;
+  currentTrail = [];
+
+  const v0 = parseFloat(ui.vel.value);
+  const angleDeg = parseFloat(ui.angle.value);
+  const angleRad = angleDeg * (Math.PI / 180);
+
+  const v0x = v0 * Math.cos(angleRad);
+  const v0y = v0 * Math.sin(angleRad);
+
+  ui.vx.textContent = `${v0x.toFixed(1)} m/s`;
+  ui.vy.textContent = `${v0y.toFixed(1)} m/s`;
+
+  // No Modo 2, a bandeira representa a estimativa do aluno.
+  if (ui.mode.value === "2") {
+    targetDistance = parseFloat(ui.guess.value);
+  }
+
+  projectile = { x: 0, y: 0, vx: v0x, vy: v0y, time: 0 };
+
+  // Ajusta escala dinamicamente para caber o voo e o alvo
+  const expectedRange = (v0x * (2 * v0y / gravity));
+  const maxVisualRange = Math.max(expectedRange, targetDistance, 200);
+  pixelsPerMeter = (canvas.width - 60) / (maxVisualRange * 1.1); // 10% de margem
+
+  if (animationId) cancelAnimationFrame(animationId);
+  lastTime = performance.now();
+  animate(lastTime);
+}
+
+let lastTime = 0;
+function animate(now) {
+  const dt = (now - lastTime) / 1000; 
+  lastTime = now;
+  
+  const simSpeed = 2.0; 
+  projectile.time += dt * simSpeed;
+
+  projectile.x = projectile.vx * projectile.time;
+  projectile.y = (projectile.vy * projectile.time) - (0.5 * gravity * Math.pow(projectile.time, 2));
+
+  const currentVy = projectile.vy - (gravity * projectile.time);
+
+  if (projectile.y >= 0) currentTrail.push({ x: projectile.x, y: projectile.y });
+
+  drawScene(currentVy);
+
+  if (projectile.y <= 0 && projectile.time > 0.1) {
+    projectile.y = 0; 
+    drawScene(currentVy); 
+    showResults();
+    return;
+  }
+
+  animationId = requestAnimationFrame(animate);
+}
+
+
+function drawScene(currentVy = 0) {
+  ctx.fillStyle = "#020617";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Grade Matemática (Marcadores 50m em X e 25m em Y)
+  ctx.strokeStyle = "rgba(51, 65, 85, 0.4)";
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "10px sans-serif";
+  ctx.lineWidth = 1;
+  ctx.textAlign = "center";
+  
+  // Grade X (50m)
+  const maxMetersX = canvas.width / pixelsPerMeter;
+  for (let m = 50; m < maxMetersX; m += 50) {
+    const px = originX + (m * pixelsPerMeter);
+    ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, groundY); ctx.stroke();
+    ctx.fillText(`${m}m`, px, groundY + 14);
+  }
+
+  // Grade Y (25m)
+  const maxMetersY = groundY / pixelsPerMeter;
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (let m = 25; m < maxMetersY; m += 25) {
+    const py = groundY - (m * pixelsPerMeter);
+    ctx.beginPath(); ctx.moveTo(originX, py); ctx.lineTo(canvas.width, py); ctx.stroke();
+    ctx.fillText(`${m}m`, originX - 4, py);
+  }
+
+  // Chão Base
+  ctx.fillStyle = "#166534";
+  ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+  ctx.strokeStyle = "#4ade80";
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke();
+
+  // Canhão Base
+  ctx.fillStyle = "#64748b";
+  ctx.beginPath(); ctx.arc(originX, groundY, 12, Math.PI, 0); ctx.fill();
+  
+  // Desenha chutes anteriores somente no Modo 1.
+  if (ui.mode.value === "1") pastAttempts.forEach((attempt) => {
+    ctx.strokeStyle = "rgba(249, 115, 22, 0.35)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    attempt.trail.forEach((pt, i) => {
+      const px = originX + (pt.x * pixelsPerMeter);
+      const py = groundY - (pt.y * pixelsPerMeter);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+    
+    // Rótulo do Chute (L1, L2, etc)
+    const lastPt = attempt.trail[attempt.trail.length - 1];
+    if (lastPt) {
+      const px = originX + (lastPt.x * pixelsPerMeter);
+      const py = groundY - (lastPt.y * pixelsPerMeter) - 10;
+      ctx.fillStyle = "rgba(249, 115, 22, 0.6)";
+      ctx.font = "bold 11px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`C${attempt.number}`, px, py);
+    }
+  });
+
+  // Rastro Atual
+  ctx.strokeStyle = "rgba(249, 115, 22, 0.8)";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  for (let i = 0; i < currentTrail.length; i++) {
+    const px = originX + (currentTrail[i].x * pixelsPerMeter);
+    const py = groundY - (currentTrail[i].y * pixelsPerMeter);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Projétil Atual
+  if (projectile) {
+    const px = originX + (projectile.x * pixelsPerMeter);
+    const py = groundY - (projectile.y * pixelsPerMeter);
+    
+    ctx.fillStyle = "#f8fafc";
+    ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2); ctx.fill();
+
+    if (projectile.y > 0) {
+      drawVector(px, py, projectile.vx, 0, "#38bdf8"); // Vx
+      drawVector(px, py, 0, currentVy, "#22c55e");     // Vy
+    }
+  }
+
+  // Modo 1: alvo solicitado. Modo 2: estimativa do aluno.
+  drawTargetFlag();
+}
+
+function drawTargetFlag() {
+  if (!Number.isFinite(targetDistance) || targetDistance <= 0) return;
+
+  const x = originX + targetDistance * pixelsPerMeter;
+  if (x < originX || x > canvas.width) return;
+
+  const flagColor = ui.mode.value === "1" ? "#ef4444" : "#38bdf8";
+
+  ctx.save();
+  ctx.strokeStyle = flagColor;
+  ctx.fillStyle = flagColor;
+  ctx.lineWidth = 2.5;
+
+  // Faixa de tolerância de 20 m.
+  ctx.fillStyle = ui.mode.value === "1"
+    ? "rgba(239, 68, 68, 0.12)"
+    : "rgba(56, 189, 248, 0.12)";
+  const tolerancePx = 20 * pixelsPerMeter;
+  ctx.fillRect(x - tolerancePx, groundY - 5, tolerancePx * 2, 5);
+
+  // Haste.
+  ctx.strokeStyle = flagColor;
+  ctx.beginPath();
+  ctx.moveTo(x, groundY);
+  ctx.lineTo(x, groundY - 42);
+  ctx.stroke();
+
+  // Bandeira.
+  ctx.fillStyle = flagColor;
+  ctx.beginPath();
+  ctx.moveTo(x, groundY - 42);
+  ctx.lineTo(x + 20, groundY - 34);
+  ctx.lineTo(x, groundY - 26);
+  ctx.closePath();
+  ctx.fill();
+
+  // Rótulo.
+  ctx.font = "bold 11px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "bottom";
+  ctx.fillText(`${targetDistance.toFixed(0)} m`, x, groundY - 47);
+  ctx.restore();
+}
+
+function drawVector(startX, startY, vx, vy, color) {
+  const vecScale = 0.5; 
+  const endX = startX + (vx * vecScale);
+  const endY = startY - (vy * vecScale); 
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(endX, endY); ctx.stroke();
+  
+  const angle = Math.atan2(startY - endY, startX - endX);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(endX, endY);
+  ctx.lineTo(endX + 6 * Math.cos(angle - Math.PI/6), endY + 6 * Math.sin(angle - Math.PI/6));
+  ctx.lineTo(endX + 6 * Math.cos(angle + Math.PI/6), endY + 6 * Math.sin(angle + Math.PI/6));
+  ctx.fill();
+}
+
+function renderFullCalculation(v0, angleDeg, v0x, v0y, t, range, hMax) {
+  ui.calcV0x.innerHTML = `<strong>1. Componente horizontal</strong><br>V<sub>0x</sub> = V<sub>0</sub> · cos(θ)<br>V<sub>0x</sub> = ${v0} · cos(${angleDeg}°)<br>V<sub>0x</sub> = <span>${v0x.toFixed(2)} m/s</span>`;
+  ui.calcV0y.innerHTML = `<strong>2. Componente vertical</strong><br>V<sub>0y</sub> = V<sub>0</sub> · sen(θ)<br>V<sub>0y</sub> = ${v0} · sen(${angleDeg}°)<br>V<sub>0y</sub> = <span>${v0y.toFixed(2)} m/s</span>`;
+  ui.calcT.innerHTML = `<strong>3. Tempo total de voo</strong><br>t = 2 · V<sub>0y</sub> / g<br>t = 2 · ${v0y.toFixed(2)} / 9,8<br>t = <span>${t.toFixed(2)} s</span>`;
+  ui.calcR.innerHTML = `<strong>4. Alcance horizontal</strong><br>A = V<sub>0x</sub> · t<br>A = ${v0x.toFixed(2)} · ${t.toFixed(2)}<br>A = <span>${range.toFixed(2)} m</span>`;
+  ui.calcH.innerHTML = `<strong>5. Altura máxima</strong><br>H = V<sub>0y</sub><sup>2</sup> / (2g)<br>H = (${v0y.toFixed(2)})² / (2 · 9,8)<br>H = <span>${hMax.toFixed(2)} m</span>`;
+}
+function calculatePhysics() {
+  const v0 = parseFloat(ui.vel.value);
+  const angleDeg = parseFloat(ui.angle.value);
+  const angleRad = angleDeg * (Math.PI / 180);
+  const v0x = v0 * Math.cos(angleRad);
+  const v0y = v0 * Math.sin(angleRad);
+  const t = (2 * v0y) / gravity;
+  const range = v0x * t;
+  const hMax = Math.pow(v0y, 2) / (2 * gravity);
+  return { v0, angleDeg, v0x, v0y, t, range, hMax };
+}
+
+function showResults() {
+  const data = calculatePhysics();
+
+  if (ui.mode.value === "2") {
+    const guess = parseFloat(ui.guess.value);
+    const diff = Math.abs(data.range - guess);
+
+    if (diff <= 20) {
+      renderFullCalculation(data.v0, data.angleDeg, data.v0x, data.v0y, data.t, data.range, data.hMax);
+      ui.mathGrid.style.display = "grid";
+      ui.fTitle.innerHTML = "🎯 Estimativa correta! Resultado do lançamento:";
+      ui.fTitle.style.color = "var(--good)";
+      score += 100;
+      ui.btnFire.style.display = "none";
+      ui.btnShowAnswer.style.display = "none";
+      ui.btnNext.style.display = "block";
+    } else {
+      ui.mathGrid.style.display = "none";
+      ui.fTitle.innerHTML = "❌ Ainda não! O projétil caiu antes ou depois da sua bandeira. Tente outra estimativa.";
+      ui.fTitle.style.color = "var(--bad)";
+      score = Math.max(0, score - 20);
+      ui.btnFire.disabled = false;
+      ui.btnShowAnswer.style.display = "block";
+    }
+  } else {
+    ui.resV0x.textContent = data.v0x.toFixed(2);
+    ui.resV0y.textContent = data.v0y.toFixed(2);
+    ui.resT.textContent = data.t.toFixed(2);
+    ui.resR.textContent = data.range.toFixed(2);
+    ui.resH.textContent = data.hMax.toFixed(2);
+
+    const diff = Math.abs(data.range - targetDistance);
+    if (diff <= 20) {
+      ui.fTitle.innerHTML = "🎯 Alvo Atingido com Sucesso!";
+      ui.fTitle.style.color = "var(--good)";
+      score += 100;
+      ui.btnFire.style.display = "none";
+      ui.btnShowAnswer.style.display = "none";
+      ui.btnNext.style.display = "block";
+    } else {
+      ui.fTitle.innerHTML = `❌ O projétil caiu a ${data.range.toFixed(1)}m. Você errou por ${diff.toFixed(1)}m! Ajuste e tente novamente.`;
+      ui.fTitle.style.color = "var(--bad)";
+      score = Math.max(0, score - 20);
+      ui.btnFire.disabled = false;
+    }
+  }
+
+  ui.score.textContent = score;
+  ui.feedback.classList.add("show");
+  drawScene();
+}
+
+function showAnswer() {
+  let data;
+
+  if (ui.mode.value === "1") {
+    // Modo 1: a resposta NÃO usa o último chute do aluno.
+    // É calculada uma solução canônica que atinge exatamente o alvo: θ = 45°.
+    const answerAngle = 45;
+    const answerV0 = Math.sqrt(targetDistance * gravity);
+    const angleRad = answerAngle * Math.PI / 180;
+    const answerV0x = answerV0 * Math.cos(angleRad);
+    const answerV0y = answerV0 * Math.sin(angleRad);
+    const answerT = (2 * answerV0y) / gravity;
+    const answerRange = answerV0x * answerT;
+    const answerH = Math.pow(answerV0y, 2) / (2 * gravity);
+
+    data = {
+      v0: answerV0,
+      angleDeg: answerAngle,
+      v0x: answerV0x,
+      v0y: answerV0y,
+      t: answerT,
+      range: answerRange,
+      hMax: answerH
+    };
+
+    // Mantém os controles sincronizados com a solução demonstrada.
+    ui.vel.value = Math.min(100, Math.max(10, answerV0)).toFixed(1);
+    ui.angle.value = answerAngle;
+    ui.valVel.innerHTML = `${answerV0.toFixed(1)} m/s <span class="answer-tag">Resposta</span>`;
+    ui.valAngle.innerHTML = `${answerAngle}&deg; <span class="answer-tag">Resposta</span>`;
+    ui.vx.textContent = `${answerV0x.toFixed(1)} m/s`;
+    ui.vy.textContent = `${answerV0y.toFixed(1)} m/s`;
+
+    // O alvo continua sendo o valor solicitado pelo exercício.
+    pixelsPerMeter = (canvas.width - 60) / (targetDistance * 1.1);
+  } else {
+    // Modo 2: a resposta usa os parâmetros fixos do desafio.
+    data = calculatePhysics();
+
+    // A bandeira continua no chute do aluno, não na resposta real.
+    const guess = parseFloat(ui.guess.value);
+    if (Number.isFinite(guess) && guess > 0) {
+      targetDistance = guess;
+    }
+
+    pixelsPerMeter = (canvas.width - 60) / (Math.max(data.range, targetDistance, 200) * 1.1);
+  }
+
+  // Gera somente a trajetória da solução demonstrada.
+  currentTrail = [];
+  const steps = 120;
+  for (let i = 0; i <= steps; i++) {
+    const tPoint = data.t * (i / steps);
+    currentTrail.push({
+      x: data.v0x * tPoint,
+      y: Math.max(0, data.v0y * tPoint - 0.5 * gravity * tPoint * tPoint)
+    });
+  }
+
+  projectile = {
+    x: data.range,
+    y: 0,
+    vx: data.v0x,
+    vy: data.v0y - gravity * data.t,
+    time: data.t
+  };
+
+  renderFullCalculation(
+    data.v0, data.angleDeg, data.v0x, data.v0y,
+    data.t, data.range, data.hMax
+  );
+  ui.mathGrid.style.display = "grid";
+
+  if (ui.mode.value === "1") {
+    ui.fTitle.innerHTML = `📘 Demonstração da solução — alcance pedido: <strong>${targetDistance.toFixed(1)} m</strong>`;
+  } else {
+    ui.fTitle.innerHTML = `📘 Resolução completa — alcance real = <strong>${data.range.toFixed(1)} m</strong>`;
+  }
+
+  ui.fTitle.style.color = "var(--accent)";
+  score = Math.max(0, score - 20);
+  ui.score.textContent = score;
+  ui.btnFire.style.display = "none";
+  ui.btnShowAnswer.style.display = "none";
+  ui.btnNext.style.display = "block";
+  ui.feedback.classList.add("show");
+  drawScene();
+}
+
+ui.btnFire.addEventListener("click", fire);
+ui.btnShowAnswer.addEventListener("click", showAnswer);
+ui.btnNext.addEventListener("click", initRound);
+
+initRound();
+</script>
+</body>
+</html>
